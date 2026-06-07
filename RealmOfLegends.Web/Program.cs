@@ -7,22 +7,11 @@ using RealmOfLegends.Web.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext with provider selected by environment (Postgres in container, SQL Server locally)
-var dbProvider = builder.Configuration["DB_PROVIDER"] ?? string.Empty;
-if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddDbContext<GameDbContext>(options =>
-        options.UseNpgsql(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            b => b.MigrationsAssembly("RealmOfLegends.Data")));
-}
-else
-{
-    builder.Services.AddDbContext<GameDbContext>(options =>
-        options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            b => b.MigrationsAssembly("RealmOfLegends.Data")));
-}
+// Add DbContext with SQL Server (use LocalDB / configured connection string)
+builder.Services.AddDbContext<GameDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        b => b.MigrationsAssembly("RealmOfLegends.Data")));
 
 // Add ASP.NET Core Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
