@@ -1,0 +1,279 @@
+@using RealmOfLegends.Data.Context
+@using RealmOfLegends.Core.Entities
+@using Microsoft.EntityFrameworkCore
+
+@{
+    ViewData["Title"] = "Dashboard";
+    var player = ViewBag.Player as Player;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+
+<div class="dashboard-container">
+    <!-- Character Panel -->
+    <div class="character-panel panel fade-in">
+        <h2 class="panel-title">Your Hero</h2>
+        
+        <div class="character-portrait">
+            <div class="portrait-frame class-@(player?.Class?.ToLower())">
+                <div class="portrait-icon">
+                    @switch(player.Class)
+                    {
+                        case "Warrior": <span>⚔️</span> break;
+                        case "Mage": <span>🔮</span> break;
+                        case "Rogue": <span>🗡️</span> break;
+                        case "Paladin": <span>🛡️</span> break;
+                    }
+                </div>
+            </div>
+            <h3 class="character-name">@player?.CharacterName</h3>
+            <p class="character-class">@player?.Class</p>
+        </div>
+        
+        <div class="level-section">
+            <div class="level-badge">
+                <span class="level-number">@player.Level</span>
+                <span class="level-label">Level</span>
+            </div>
+            <div class="xp-bar-container">
+                @{
+                    var xpForNextLevel = player.Level * 1000;
+                    var xpPercent = (double)player.XP / xpForNextLevel * 100;
+                }
+                <div class="xp-bar">
+                    <div class="xp-fill" style="width: @xpPercent%"></div>
+                </div>
+                <p class="xp-text">@player.XP / @xpForNextLevel XP</p>
+            </div>
+        </div>
+        
+        <div class="attributes-grid">
+            <div class="attribute">
+                <span class="attr-icon">💪</span>
+                <span class="attr-label">STR</span>
+                <span class="attr-value">@player.Strength</span>
+            </div>
+            <div class="attribute">
+                <span class="attr-icon">⚡</span>
+                <span class="attr-label">AGI</span>
+                <span class="attr-value">@player.Agility</span>
+            </div>
+            <div class="attribute">
+                <span class="attr-icon">🧠</span>
+                <span class="attr-label">INT</span>
+                <span class="attr-value">@player.Intelligence</span>
+            </div>
+            <div class="attribute">
+                <span class="attr-icon">🛡️</span>
+                <span class="attr-label">END</span>
+                <span class="attr-value">@player.Endurance</span>
+            </div>
+            <div class="attribute">
+                <span class="attr-icon">🍀</span>
+                <span class="attr-label">LCK</span>
+                <span class="attr-value">@player.Luck</span>
+            </div>
+        </div>
+        
+        <div class="derived-stats">
+            <div class="stat-row">
+                <span class="stat-label">❤️ HP</span>
+                <span class="stat-value">@player.HP / @player.MaxHP</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">✨ MP</span>
+                <span class="stat-value">@player.MP / @player.MaxMP</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">⚔️ Attack</span>
+                <span class="stat-value">@player.AttackPower</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">🛡️ Defense</span>
+                <span class="stat-value">@player.DefenseRating</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">💥 Crit</span>
+                <span class="stat-value">@(player.CriticalHitChance * 100)%</span>
+            </div>
+        </div>
+        
+        <div class="equipment-preview">
+            <h4>Equipped Items</h4>
+            <div class="equipment-icons">
+                @{
+                    var equippedItems = player?.Inventories.Where(i => i.IsEquipped).ToList() ?? new List<Inventory>();
+                    var slots = new[] { "Head", "Chest", "Weapon", "Legs", "Boots", "Gloves", "Accessory" };
+                }
+                @foreach(var slot in slots)
+                {
+                    var item = equippedItems.FirstOrDefault(i => i.SlotType == slot);
+                    <div class="equipment-slot" title="@slot">
+                        @if(item != null)
+                        {
+                            <span class="item-equipped">✓</span>
+                        }
+                        else
+                        {
+                            <span class="item-empty">○</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Panel -->
+    <div class="leaderboard-panel panel slide-in-right">
+        <h2 class="panel-title">🏆 Leaderboard</h2>
+        <p class="panel-subtitle">Top Champions of the Realm</p>
+        
+        <div class="leaderboard-table">
+            @{
+                var leaderboard = ViewBag.Leaderboard as List<dynamic> ?? new List<dynamic>();
+                for(int i = 0; i < leaderboard.Count; i++)
+                {
+                    var entry = leaderboard[i];
+                    var rank = i + 1;
+                    var rankIcon = rank == 1 ? "🥇" : rank == 2 ? "🥈" : rank == 3 ? "🥉" : $"{rank}.";
+                    var isCurrentPlayer = entry.IsCurrentPlayer ?? false;
+                    
+                    <div class="leaderboard-row @(isCurrentPlayer ? "current-player" : "")">
+                        <span class="rank">@rankIcon</span>
+                        <div class="player-info">
+                            <span class="player-name">@entry.CharacterName</span>
+                            <span class="player-class">@entry.Class</span>
+                        </div>
+                        <div class="player-stats">
+                            <span class="stat">Lv @entry.Level</span>
+                            <span class="stat">Arena @entry.ArenaLevel</span>
+                            <span class="stat gold">@entry.Gold 💰</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        
+        <button class="refresh-btn" onclick="refreshLeaderboard()">🔄 Refresh</button>
+    </div>
+    
+    <!-- Daily Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card panel scale-up">
+            <div class="card-icon">📜</div>
+            <div class="card-content">
+                <h3 class="card-title">Quests Today</h3>
+                <p class="card-value">@ViewBag.QuestsToday</p>
+                <a href="@Url.Action("Index", "Quest")" class="card-link">View Quests →</a>
+            </div>
+        </div>
+        
+        <div class="summary-card panel scale-up" style="animation-delay: 0.1s">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+                <h3 class="card-title">Gold Spent Today</h3>
+                <p class="card-value">@ViewBag.GoldToday</p>
+                <a href="@Url.Action("Index", "Shop")" class="card-link">Visit Shop →</a>
+            </div>
+        </div>
+        
+        <div class="summary-card panel scale-up" style="animation-delay: 0.2s">
+            <div class="card-icon">⚔️</div>
+            <div class="card-content">
+                <h3 class="card-title">Arena Wins Today</h3>
+                <p class="card-value">@ViewBag.ArenaWinsToday</p>
+                <a href="@Url.Action("Index", "Arena")" class="card-link">Enter Arena →</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Achievement Tracker -->
+    <div class="achievements-panel panel slide-in-left">
+        <h2 class="panel-title">🏅 Achievements</h2>
+        <div class="achievements-scroll">
+            @{
+                var context = Context.RequestServices.GetService(typeof(GameDbContext)) as GameDbContext;
+                var allAchievements = context != null ? await context.Achievements.ToListAsync() : new List<Achievement>();
+                var unlockedIds = player?.PlayerAchievements.Select(pa => pa.AchievementId).ToList() ?? new List<int>();
+            }
+            @foreach(var achievement in allAchievements)
+            {
+                var isUnlocked = unlockedIds.Contains(achievement.AchievementId);
+                <div class="achievement-badge @(isUnlocked ? "unlocked" : "locked")" title="@achievement.Description">
+                    <div class="badge-icon">
+                        @if(isUnlocked)
+                        {
+                            <span>🏅</span>
+                        }
+                        else
+                        {
+                            <span>🔒</span>
+                        }
+                    </div>
+                    <p class="badge-title">@achievement.Title</p>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- News Feed -->
+    <div class="news-panel panel fade-in">
+        <h2 class="panel-title">📰 Latest News</h2>
+        @{
+            var news = ViewBag.News as List<News> ?? new List<News>();
+        }
+        @foreach(var article in news)
+        {
+            <div class="news-item">
+                <h3 class="news-title">@article.Title</h3>
+                <p class="news-body">@article.Body</p>
+                <p class="news-date">@article.PostedAt.ToString("MMM dd, yyyy")</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function refreshLeaderboard() {
+            try {
+                const response = await fetch('@Url.Action("GetLeaderboard", "Dashboard")');
+                const data = await response.json();
+                
+                // Update leaderboard UI
+                const container = document.querySelector('.leaderboard-table');
+                container.innerHTML = '';
+                
+                data.forEach(entry => {
+                    const rankIcon = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`;
+                    const row = document.createElement('div');
+                    row.className = 'leaderboard-row fade-in';
+                    row.innerHTML = `
+                        <span class="rank">${rankIcon}</span>
+                        <div class="player-info">
+                            <span class="player-name">${entry.name}</span>
+                            <span class="player-class">${entry.class}</span>
+                        </div>
+                        <div class="player-stats">
+                            <span class="stat">Lv ${entry.level}</span>
+                            <span class="stat">Arena ${entry.arenaLevel}</span>
+                            <span class="stat gold">${entry.gold} 💰</span>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+                
+                if(window.RealmOfLegends) {
+                    window.RealmOfLegends.showNotification('Leaderboard refreshed!', 'success');
+                }
+            } catch(error) {
+                console.error('Error refreshing leaderboard:', error);
+            }
+        }
+        
+        // Auto-refresh leaderboard every 60 seconds
+        setInterval(refreshLeaderboard, 60000);
+    </script>
+}

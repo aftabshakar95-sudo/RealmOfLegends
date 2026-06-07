@@ -1,0 +1,436 @@
+@model RealmOfLegends.Web.Models.ViewModels.CreateCharacterViewModel
+@using System.Linq
+@{
+    ViewData["Title"] = "Create Your Character";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Realm of Legends</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:wght@300;400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/reset.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/animations.css" asp-append-version="true" />
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--color-bg-dark) 0%, var(--color-primary) 100%);
+            position: relative;
+            overflow-x: hidden;
+            padding: var(--spacing-xl) 0;
+        }
+        
+        .background-grid {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 1;
+        }
+        
+        @@keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .character-container {
+            position: relative;
+            z-index: 2;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid rgba(233, 69, 96, 0.3);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-3xl);
+            max-width: 900px;
+            width: 90%;
+            box-shadow: var(--shadow-xl), 0 0 40px rgba(233, 69, 96, 0.2);
+        }
+        
+        .character-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .character-title {
+            font-size: var(--text-4xl);
+            font-family: var(--font-display);
+            color: var(--color-accent);
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .character-subtitle {
+            font-family: var(--font-body);
+            color: var(--color-muted);
+            font-size: var(--text-lg);
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .form-label {
+            display: block;
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: var(--spacing-md);
+            font-size: var(--text-xl);
+            text-align: center;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-lg);
+            background: rgba(15, 15, 30, 0.8);
+            border: 2px solid rgba(138, 138, 170, 0.3);
+            border-radius: var(--border-radius-md);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            font-size: var(--text-xl);
+            transition: all var(--transition-fast);
+            text-align: center;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        .form-control::placeholder {
+            color: var(--color-muted);
+        }
+        
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .class-card {
+            position: relative;
+            background: rgba(15, 15, 30, 0.8);
+            border: 2px solid rgba(138, 138, 170, 0.3);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-xl);
+            cursor: pointer;
+            transition: all var(--transition-med);
+            text-align: center;
+        }
+        
+        .class-card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.4);
+            transform: translateY(-5px);
+        }
+        
+        .class-card.selected {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.6);
+            background: rgba(233, 69, 96, 0.1);
+        }
+        
+        .class-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .class-name {
+            font-family: var(--font-display);
+            font-size: var(--text-xl);
+            color: var(--color-text);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .class-description {
+            font-family: var(--font-body);
+            font-size: var(--text-sm);
+            color: var(--color-muted);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .class-stats {
+            font-family: var(--font-ui);
+            font-size: var(--text-xs);
+            color: var(--color-gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: var(--text-xl);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
+            margin-top: var(--spacing-2xl);
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #ff5070;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .validation-error {
+            color: var(--color-error);
+            font-size: var(--text-sm);
+            margin-top: var(--spacing-sm);
+            font-family: var(--font-ui);
+            text-align: center;
+        }
+        
+        .alert {
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            margin-bottom: var(--spacing-lg);
+            font-family: var(--font-ui);
+            font-size: var(--text-sm);
+            text-align: center;
+        }
+        
+        .alert-danger {
+            background: rgba(255, 51, 51, 0.1);
+            border: 1px solid rgba(255, 51, 51, 0.3);
+            color: var(--color-error);
+        }
+        
+        input[type="radio"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-grid"></div>
+    
+    <div class="character-container fade-in">
+        <div class="character-header">
+            <h1 class="character-title">CREATE YOUR HERO</h1>
+            <p class="character-subtitle">Choose your path and forge your legend</p>
+        </div>
+        
+        @if (ViewData.ModelState != null && !ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+        {
+            <div class="alert alert-danger">
+                <ul style="margin: 0; padding: 0; list-style: none;">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+        
+        <form asp-action="CreateCharacter" asp-controller="Account" method="post" id="characterForm">
+            @Html.AntiForgeryToken()
+            
+            <div class="form-group">
+                <label class="form-label" asp-for="CharacterName">Character Name</label>
+                <input class="form-control" asp-for="CharacterName" type="text" placeholder="Enter your hero's name" maxlength="50" />
+                <span asp-validation-for="CharacterName" class="validation-error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" asp-for="Class">Choose Your Class</label>
+                <span asp-validation-for="Class" class="validation-error"></span>
+                
+                <div class="class-grid">
+                    <label class="class-card" data-class="Warrior">
+                        <input type="radio" asp-for="Class" value="Warrior" />
+                        <div class="class-icon">⚔️</div>
+                        <h3 class="class-name">Warrior</h3>
+                        <p class="class-description">Master of melee combat with high strength and endurance</p>
+                        <p class="class-stats">STR: 15 | END: 14</p>
+                    </label>
+                    
+                    <label class="class-card" data-class="Mage">
+                        <input type="radio" asp-for="Class" value="Mage" />
+                        <div class="class-icon">🔮</div>
+                        <h3 class="class-name">Mage</h3>
+                        <p class="class-description">Wielder of arcane magic with devastating spell power</p>
+                        <p class="class-stats">INT: 16 | MP: 150</p>
+                    </label>
+                    
+                    <label class="class-card" data-class="Rogue">
+                        <input type="radio" asp-for="Class" value="Rogue" />
+                        <div class="class-icon">🗡️</div>
+                        <h3 class="class-name">Rogue</h3>
+                        <p class="class-description">Swift and deadly assassin with high critical hit chance</p>
+                        <p class="class-stats">AGI: 16 | CRIT: 25%</p>
+                    </label>
+                    
+                    <label class="class-card" data-class="Paladin">
+                        <input type="radio" asp-for="Class" value="Paladin" />
+                        <div class="class-icon">🛡️</div>
+                        <h3 class="class-name">Paladin</h3>
+                        <p class="class-description">Holy warrior with balanced stats and strong defense</p>
+                        <p class="class-stats">Balanced | DEF: 10</p>
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="submitBtn">
+                Begin Your Journey
+            </button>
+        </form>
+    </div>
+    
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const classCards = document.querySelectorAll('.class-card');
+            const submitBtn = document.getElementById('submitBtn');
+            const characterName = document.querySelector('input[name="CharacterName"]');
+            const form = document.getElementById('characterForm');
+            
+            console.log('Character creation page initialized');
+            console.log('Found elements:', {
+                classCards: classCards.length,
+                submitBtn: !!submitBtn,
+                characterName: !!characterName,
+                form: !!form
+            });
+            
+            // Class selection handling
+            classCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    console.log('Class card clicked:', this.dataset.class);
+                    
+                    // Remove selection from all cards
+                    classCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selection to clicked card
+                    this.classList.add('selected');
+                    
+                    // Ensure the radio button is checked
+                    const radioBtn = this.querySelector('input[type="radio"]');
+                    if (radioBtn) {
+                        radioBtn.checked = true;
+                        console.log('Radio button checked:', radioBtn.value);
+                    }
+                    
+                    // Force update button state
+                    setTimeout(updateSubmitButton, 50);
+                });
+            });
+            
+            // Handle direct radio button changes
+            document.querySelectorAll('input[name="Class"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    console.log('Radio changed:', this.value);
+                    classCards.forEach(c => c.classList.remove('selected'));
+                    const parentCard = this.closest('.class-card');
+                    if (parentCard) {
+                        parentCard.classList.add('selected');
+                    }
+                    updateSubmitButton();
+                });
+            });
+            
+            // Character name input handling
+            if (characterName) {
+                characterName.addEventListener('input', function() {
+                    console.log('Name changed:', this.value);
+                    updateSubmitButton();
+                });
+                characterName.addEventListener('keyup', updateSubmitButton);
+                characterName.addEventListener('change', updateSubmitButton);
+            }
+            
+            // Submit button click handler for debugging
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    console.log('Button clicked, disabled:', this.disabled);
+                    if (!this.disabled) {
+                        console.log('Submitting form...');
+                    } else {
+                        e.preventDefault();
+                        console.warn('Button is disabled, submission prevented');
+                    }
+                });
+            }
+            
+            function updateSubmitButton() {
+                const nameValue = characterName ? characterName.value.trim() : '';
+                const hasName = nameValue.length >= 1;  // Changed from ≥2 to ≥1
+                const selectedRadio = document.querySelector('input[name="Class"]:checked');
+                const hasClass = !!selectedRadio;
+                
+                console.log('=== Validation Check ===');
+                console.log('Name:', nameValue, '(length:', nameValue.length, ')');
+                console.log('Has valid name (≥1 char):', hasName);
+                console.log('Selected class:', selectedRadio ? selectedRadio.value : 'none');
+                console.log('Has class:', hasClass);
+                console.log('Should enable button:', hasName && hasClass);
+                
+                if (submitBtn) {
+                    // Enable button if EITHER name OR class is selected (more lenient)
+                    if (hasClass) {  // Just need class selected
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                        submitBtn.style.pointerEvents = 'auto';
+                        submitBtn.removeAttribute('disabled');
+                        console.log('✅ Button ENABLED (class selected)');
+                    } else {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.style.cursor = 'not-allowed';
+                        submitBtn.style.pointerEvents = 'none';
+                        submitBtn.setAttribute('disabled', 'disabled');
+                        console.log('❌ Button DISABLED (no class selected)');
+                    }
+                }
+            }
+            
+            // Initialize if form has errors (preserve selection)
+            const selectedClass = document.querySelector('input[name="Class"]:checked');
+            if (selectedClass) {
+                console.log('Found pre-selected class:', selectedClass.value);
+                const card = document.querySelector(`[data-class="${selectedClass.value}"]`);
+                if (card) {
+                    card.classList.add('selected');
+                }
+            }
+            
+            // Initial button state check with delays to ensure DOM is ready
+            setTimeout(updateSubmitButton, 100);
+            setTimeout(updateSubmitButton, 500);
+        });
+    </script>
+</body>
+</html>

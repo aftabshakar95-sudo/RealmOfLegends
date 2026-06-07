@@ -1,0 +1,117 @@
+@using Microsoft.AspNetCore.Identity
+@using RealmOfLegends.Core.Entities
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Realm of Legends</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:wght@300;400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/reset.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/animations.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">REALM</h1>
+                <p class="logo-sub">OF LEGENDS</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <a asp-controller="Dashboard" asp-action="Index" class="nav-link">
+                        <span class="nav-icon">🏰</span>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Quest" ? "active" : "")">
+                    <a asp-controller="Quest" asp-action="Index" class="nav-link">
+                        <span class="nav-icon">📜</span>
+                        <span class="nav-label">Quests</span>
+                    </a>
+                </li>
+                <li class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Shop" ? "active" : "")">
+                    <a asp-controller="Shop" asp-action="Index" class="nav-link">
+                        <span class="nav-icon">🛒</span>
+                        <span class="nav-label">Shop</span>
+                    </a>
+                </li>
+                <li class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Inventory" ? "active" : "")">
+                    <a asp-controller="Inventory" asp-action="Index" class="nav-link">
+                        <span class="nav-icon">🎒</span>
+                        <span class="nav-label">Inventory</span>
+                    </a>
+                </li>
+                <li class="nav-item @(Context.Request.Path.StartsWithSegments("/ArenaCanvas") ? "active" : "")">
+                    <a href="/ArenaCanvas" class="nav-link">
+                        <span class="nav-icon">⚔️</span>
+                        <span class="nav-label">Arena</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="nav-footer">
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    <button type="submit" class="nav-link logout-btn">
+                        <span class="nav-icon">🚪</span>
+                        <span class="nav-label">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </nav>
+        
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h2 class="page-title">@ViewData["Title"]</h2>
+            </div>
+            <div class="topbar-right">
+                <div class="stat-badge gold-badge">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-value" id="playerGold">@ViewBag.PlayerGold</span>
+                </div>
+                <div class="stat-badge level-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-label">Level</span>
+                    <span class="stat-value" id="playerLevel">@ViewBag.PlayerLevel</span>
+                </div>
+                <div class="player-info">
+                    <span class="player-name">@ViewBag.CharacterName</span>
+                    <span class="player-class">@ViewBag.PlayerClass</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            @RenderBody()
+        </main>
+    }
+    else
+    {
+        <!-- Guest Layout (Login/Register) -->
+        <div class="auth-wrapper">
+            @RenderBody()
+        </div>
+    }
+    
+    <!-- Scripts -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

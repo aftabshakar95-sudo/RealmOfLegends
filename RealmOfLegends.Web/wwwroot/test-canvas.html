@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Canvas Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: #111;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="testCanvas"></canvas>
+    
+    <script>
+        console.log('Test page loaded');
+        
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas to full screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        
+        // Draw animated character test
+        function drawTestCharacter(x, y) {
+            const size = 80;
+            
+            // Body
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - size * 0.25, y - size * 0.3, size * 0.5, size * 0.6);
+            
+            // Head
+            ctx.fillStyle = '#FFE4C4';
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.5, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x - size * 0.08, y - size * 0.5, size * 0.05, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.08, y - size * 0.5, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Arms
+            ctx.strokeStyle = '#FFE4C4';
+            ctx.lineWidth = size * 0.15;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.25, y - size * 0.2);
+            ctx.lineTo(x - size * 0.4, y + size * 0.1);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + size * 0.25, y - size * 0.2);
+            ctx.lineTo(x + size * 0.4, y + size * 0.1);
+            ctx.stroke();
+            
+            // Legs
+            ctx.strokeStyle = '#654321';
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.1, y + size * 0.3);
+            ctx.lineTo(x - size * 0.15, y + size * 0.6);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + size * 0.1, y + size * 0.3);
+            ctx.lineTo(x + size * 0.15, y + size * 0.6);
+            ctx.stroke();
+            
+            // Sword
+            ctx.strokeStyle = '#C0C0C0';
+            ctx.lineWidth = size * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(x + size * 0.4, y + size * 0.1);
+            ctx.lineTo(x + size * 0.5, y + size * 0.4);
+            ctx.stroke();
+        }
+        
+        // Clear and draw
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw test characters
+        drawTestCharacter(canvas.width * 0.3, canvas.height * 0.5);
+        drawTestCharacter(canvas.width * 0.7, canvas.height * 0.5);
+        
+        // Draw text
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('CANVAS TEST - Characters Rendering!', canvas.width / 2, 100);
+        
+        console.log('Characters drawn successfully');
+    </script>
+</body>
+</html>

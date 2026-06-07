@@ -1,0 +1,348 @@
+@{
+    ViewData["Title"] = "Riddle Master";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .game-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            position: relative;
+        }
+
+        .game-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #8e44ad;
+            margin: 0 0 1rem 0;
+        }
+
+        .riddle-container {
+            background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .riddle-text {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            font-style: italic;
+            margin: 0;
+        }
+
+        .riddle-number {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            color: #8e44ad;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #8e44ad;
+            box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
+        }
+
+        .hint-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .hint-box.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .result-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .result-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .attempts {
+            margin-top: 1rem;
+            color: #666;
+            font-weight: 600;
+        }
+    </style>
+}
+
+<div class="game-container">
+    <div class="game-panel">
+        <h1 class="game-title">❓ Riddle Master</h1>
+        <p class="game-instructions">
+            Solve the ancient riddle to prove your wisdom!
+        </p>
+
+        <div class="riddle-container">
+            <span class="riddle-number">Riddle #1</span>
+            <p class="riddle-text" id="riddleText">
+                I speak without a mouth and hear without ears.<br>
+                I have no body, but I come alive with wind.<br>
+                What am I?
+            </p>
+        </div>
+
+        <input type="text" 
+               id="answerInput" 
+               class="answer-input" 
+               placeholder="Type your answer here..." 
+               autocomplete="off">
+
+        <div class="attempts" id="attempts">Attempts: 0/3</div>
+
+        <div class="hint-box" id="hintBox">
+            <strong>💡 Hint:</strong> Think about sound bouncing back...
+        </div>
+
+        <div class="game-buttons">
+            <button class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+            <button class="btn btn-warning" onclick="showHint()">Show Hint</button>
+        </div>
+
+        <div class="game-buttons" style="margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="nextRiddle()">Next Riddle</button>
+            <a href="@Url.Action("Index", "Quest")" class="btn btn-secondary">Back to Quests</a>
+        </div>
+
+        <div class="result-message" id="resultMessage"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const riddles = [
+            {
+                id: 1,
+                text: "I speak without a mouth and hear without ears.<br>I have no body, but I come alive with wind.<br>What am I?",
+                answer: "echo",
+                hint: "Think about sound bouncing back..."
+            },
+            {
+                id: 2,
+                text: "I have cities, but no houses. I have mountains, but no trees.<br>I have water, but no fish.<br>What am I?",
+                answer: "map",
+                hint: "It's something you use for navigation..."
+            },
+            {
+                id: 3,
+                text: "I am not alive, but I grow.<br>I don't have lungs, but I need air.<br>I don't have a mouth, but water kills me.<br>What am I?",
+                answer: "fire",
+                hint: "It's hot and bright..."
+            }
+        ];
+
+        let currentRiddleIndex = 0;
+        let attempts = 0;
+        let maxAttempts = 3;
+        let hintShown = false;
+
+        function loadRiddle() {
+            const riddle = riddles[currentRiddleIndex];
+            document.getElementById('riddleText').innerHTML = riddle.text;
+            document.querySelector('.riddle-number').textContent = `Riddle #${riddle.id}`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('hintBox').classList.remove('show');
+            document.getElementById('resultMessage').style.display = 'none';
+            attempts = 0;
+            hintShown = false;
+            updateAttempts();
+        }
+
+        function updateAttempts() {
+            document.getElementById('attempts').textContent = `Attempts: ${attempts}/${maxAttempts}`;
+        }
+
+        function showHint() {
+            const hintBox = document.getElementById('hintBox');
+            const riddle = riddles[currentRiddleIndex];
+            
+            hintBox.innerHTML = `<strong>💡 Hint:</strong> ${riddle.hint}`;
+            hintBox.classList.add('show');
+            hintShown = true;
+        }
+
+        async function submitAnswer() {
+            const answer = document.getElementById('answerInput').value.trim();
+            const riddle = riddles[currentRiddleIndex];
+            
+            if (!answer) {
+                alert('Please enter an answer!');
+                return;
+            }
+
+            attempts++;
+            updateAttempts();
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                
+                const response = await fetch('@Url.Action("SubmitRiddle", "Quest")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ 
+                        riddleId: riddle.id,
+                        answer: answer
+                    })
+                });
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultMessage');
+                
+                if (data.success) {
+                    resultDiv.className = 'result-message success';
+                    resultDiv.textContent = `Correct! You earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
+                    
+                    setTimeout(() => {
+                        window.location.href = '@Url.Action("Index", "Quest")';
+                    }, 2000);
+                } else {
+                    resultDiv.className = 'result-message error';
+                    resultDiv.textContent = data.message;
+                    
+                    if (attempts >= maxAttempts) {
+                        resultDiv.textContent += ` The answer was: ${riddle.answer}`;
+                        setTimeout(() => {
+                            if (currentRiddleIndex < riddles.length - 1) {
+                                nextRiddle();
+                            }
+                        }, 3000);
+                    } else if (!hintShown) {
+                        showHint();
+                    }
+                }
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+            }
+        }
+
+        function nextRiddle() {
+            currentRiddleIndex = (currentRiddleIndex + 1) % riddles.length;
+            loadRiddle();
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('answerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitAnswer();
+            }
+        });
+
+        // Load first riddle on page load
+        loadRiddle();
+    </script>
+    
+    @Html.AntiForgeryToken()
+}

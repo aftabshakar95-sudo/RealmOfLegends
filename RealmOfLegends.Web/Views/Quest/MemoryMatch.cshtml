@@ -1,0 +1,351 @@
+@{
+    ViewData["Title"] = "Memory Match";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .game-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            position: relative;
+        }
+
+        .game-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #4ecdc4;
+            margin: 0 0 1rem 0;
+        }
+
+        .game-stats {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 2rem auto;
+            max-width: 500px;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .memory-card .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .memory-card .card-front {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: white;
+            transform: rotateY(180deg);
+        }
+
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .memory-card.matched {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            cursor: default;
+            opacity: 0.6;
+        }
+
+        .memory-card:hover:not(.flipped):not(.matched) {
+            transform: scale(1.05);
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .result-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+    </style>
+}
+
+<div class="game-container">
+    <div class="game-panel">
+        <h1 class="game-title">🧠 Memory Match</h1>
+        <p class="game-instructions">
+            Find all matching pairs of cards!
+        </p>
+
+        <div class="game-stats">
+            <div class="stat-box">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="moves">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Matches:</span>
+                <span class="stat-value" id="matches">0/8</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="time">0s</span>
+            </div>
+        </div>
+
+        <div class="memory-grid" id="memoryGrid">
+            <!-- Cards will be generated by JavaScript -->
+        </div>
+
+        <div class="game-buttons">
+            <button class="btn btn-primary" id="startBtn" onclick="startGame()">Start Game</button>
+            <a href="@Url.Action("Index", "Quest")" class="btn btn-secondary">Back to Quests</a>
+        </div>
+
+        <div class="result-message" id="resultMessage"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const cardSymbols = ['⚔️', '🛡️', '🔮', '💎', '👑', '🏹', '🗡️', '⚡'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let gameStarted = false;
+        let startTime = 0;
+        let timerInterval;
+
+        function initializeCards() {
+            cards = [...cardSymbols, ...cardSymbols]
+                .sort(() => Math.random() - 0.5);
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('memoryGrid');
+            grid.innerHTML = '';
+            
+            cards.forEach((symbol, index) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.index = index;
+                card.dataset.symbol = symbol;
+                
+                card.innerHTML = `
+                    <div class="card-back">❓</div>
+                    <div class="card-front">${symbol}</div>
+                `;
+                
+                card.addEventListener('click', () => flipCard(card));
+                grid.appendChild(card);
+            });
+        }
+
+        function startGame() {
+            gameStarted = true;
+            matchedPairs = 0;
+            moves = 0;
+            flippedCards = [];
+            startTime = Date.now();
+            
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('matches').textContent = '0/8';
+            document.getElementById('time').textContent = '0s';
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('resultMessage').style.display = 'none';
+            
+            initializeCards();
+            renderCards();
+            
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('time').textContent = `${elapsed}s`;
+        }
+
+        function flipCard(card) {
+            if (!gameStarted) {
+                alert('Click Start Game first!');
+                return;
+            }
+            
+            if (card.classList.contains('flipped') || 
+                card.classList.contains('matched') ||
+                flippedCards.length >= 2) {
+                return;
+            }
+            
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                
+                setTimeout(checkMatch, 800);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.dataset.symbol === card2.dataset.symbol) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                document.getElementById('matches').textContent = `${matchedPairs}/8`;
+                
+                if (matchedPairs === 8) {
+                    endGame();
+                }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            
+            flippedCards = [];
+        }
+
+        function endGame() {
+            gameStarted = false;
+            clearInterval(timerInterval);
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            submitScore(moves, elapsed);
+        }
+
+        async function submitScore(moves, time) {
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                
+                const response = await fetch('@Url.Action("SubmitMemoryMatch", "Quest")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ moves, time })
+                });
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultMessage');
+                
+                if (data.success) {
+                    resultDiv.className = 'result-message success';
+                    resultDiv.textContent = `Congratulations! You completed it in ${moves} moves! Earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
+                    
+                    setTimeout(() => {
+                        window.location.href = '@Url.Action("Index", "Quest")';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error submitting score:', error);
+            }
+        }
+    </script>
+    
+    @Html.AntiForgeryToken()
+}

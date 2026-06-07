@@ -1,0 +1,432 @@
+/* Shop Page Styles */
+
+.shop-container {
+    width: 100%;
+    padding: 2rem;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+    position: relative;
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+.shop-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 30% 40%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(241, 196, 15, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.shop-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.player-wallet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2));
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    border: 2px solid rgba(241, 196, 15, 0.3);
+    margin-top: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.wallet-icon {
+    font-size: 1.5rem;
+}
+
+.wallet-label {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.wallet-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f1c40f;
+    text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+.shop-controls {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.filters {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.filter-group select {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-group select:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(241, 196, 15, 0.5);
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #f1c40f;
+    box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.1);
+}
+
+.item-count {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.shop-item {
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.shop-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Rarity-based borders and glows */
+.shop-item.common {
+    border-color: rgba(189, 195, 199, 0.3);
+}
+
+.shop-item.uncommon {
+    border-color: rgba(46, 204, 113, 0.5);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+.shop-item.rare {
+    border-color: rgba(52, 152, 219, 0.5);
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.2);
+}
+
+.shop-item.epic {
+    border-color: rgba(155, 89, 182, 0.5);
+    box-shadow: 0 0 15px rgba(155, 89, 182, 0.2);
+}
+
+.shop-item.legendary {
+    border-color: rgba(241, 196, 15, 0.6);
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+    animation: legendaryPulse 2s ease-in-out infinite;
+}
+
+@keyframes legendaryPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(241, 196, 15, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(241, 196, 15, 0.5); }
+}
+
+.item-rarity-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.item-rarity-badge.common {
+    background: rgba(189, 195, 199, 0.3);
+    color: #bdc3c7;
+}
+
+.item-rarity-badge.uncommon {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+.item-rarity-badge.rare {
+    background: rgba(52, 152, 219, 0.3);
+    color: #3498db;
+}
+
+.item-rarity-badge.epic {
+    background: rgba(155, 89, 182, 0.3);
+    color: #9b59b6;
+}
+
+.item-rarity-badge.legendary {
+    background: rgba(241, 196, 15, 0.3);
+    color: #f1c40f;
+}
+
+.item-icon {
+    margin: 1rem 0;
+}
+
+.icon-emoji {
+    font-size: 4rem;
+    display: block;
+}
+
+.item-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0.5rem 0;
+}
+
+.item-category {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.75rem;
+}
+
+.item-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    min-height: 3rem;
+}
+
+.item-stats {
+    background: rgba(46, 204, 113, 0.2);
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.stat-bonus {
+    color: #2ecc71;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-price {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-icon {
+    font-size: 1.2rem;
+}
+
+.price-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f1c40f;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-buy {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+}
+
+.btn-buy:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+}
+
+.btn-disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Purchase Animation Overlay */
+.purchase-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.purchase-popup {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border-radius: 20px;
+    padding: 3rem;
+    text-align: center;
+    animation: scaleUp 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.purchase-popup.legendary {
+    background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+    box-shadow: 0 0 50px rgba(241, 196, 15, 0.5);
+}
+
+.purchase-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: spin 1s ease;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg) scale(0.5); opacity: 0; }
+    to { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+
+.purchase-popup h2 {
+    font-size: 2rem;
+    color: #fff;
+    margin: 0 0 1rem 0;
+}
+
+.item-acquired {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0.5rem 0;
+}
+
+.rarity-label {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: inline-block;
+    margin: 1rem 0;
+}
+
+.rarity-label.legendary {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.coin-animation {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.coin {
+    font-size: 2rem;
+    animation: coinFall 1s ease infinite;
+}
+
+.coin:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.coin:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes coinFall {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .shop-container {
+        padding: 1rem;
+    }
+    
+    .shop-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters {
+        flex-direction: column;
+    }
+}

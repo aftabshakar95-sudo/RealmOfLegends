@@ -1,0 +1,315 @@
+@{
+    ViewData["Title"] = "Click Challenge";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .game-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+        }
+
+        @@keyframes moveBackground {
+            from { transform: translate(0, 0); }
+            to { transform: translate(50px, 50px); }
+        }
+
+        .game-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #667eea;
+            margin: 0 0 1rem 0;
+        }
+
+        .game-instructions {
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .game-stats {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            flex: 1;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .click-target {
+            width: 200px;
+            height: 200px;
+            margin: 2rem auto;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease;
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        }
+
+        .click-target:hover {
+            transform: scale(1.05);
+        }
+
+        .click-target:active {
+            transform: scale(0.95);
+        }
+
+        .click-target.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .result-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+}
+
+<div class="game-container">
+    <div class="game-panel">
+        <h1 class="game-title">👆 Click Challenge</h1>
+        <p class="game-instructions">
+            Click the target as many times as you can within 10 seconds!<br>
+            Your speed and accuracy will be tested.
+        </p>
+
+        <div class="game-stats">
+            <div class="stat-box">
+                <div class="stat-label">Clicks</div>
+                <div class="stat-value" id="clickCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Time Left</div>
+                <div class="stat-value" id="timeLeft">10</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">CPS</div>
+                <div class="stat-value" id="cps">0.0</div>
+            </div>
+        </div>
+
+        <div class="click-target" id="clickTarget">
+            🎯
+        </div>
+
+        <div class="game-buttons">
+            <button class="btn btn-primary" id="startBtn" onclick="startGame()">Start Challenge</button>
+            <a href="@Url.Action("Index", "Quest")" class="btn btn-secondary">Back to Quests</a>
+        </div>
+
+        <div class="result-message" id="resultMessage"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let clicks = 0;
+        let gameActive = false;
+        let startTime = 0;
+        let duration = 10; // 10 seconds
+        let timerInterval;
+
+        function startGame() {
+            clicks = 0;
+            gameActive = true;
+            startTime = Date.now();
+            
+            document.getElementById('clickCount').textContent = '0';
+            document.getElementById('timeLeft').textContent = duration;
+            document.getElementById('cps').textContent = '0.0';
+            document.getElementById('clickTarget').classList.remove('disabled');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('resultMessage').style.display = 'none';
+            
+            // Start timer
+            timerInterval = setInterval(updateTimer, 100);
+            
+            // End game after duration
+            setTimeout(endGame, duration * 1000);
+        }
+
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const remaining = Math.max(0, duration - elapsed);
+            document.getElementById('timeLeft').textContent = remaining.toFixed(1);
+            
+            if (clicks > 0) {
+                const cps = (clicks / elapsed).toFixed(1);
+                document.getElementById('cps').textContent = cps;
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            document.getElementById('clickTarget').classList.add('disabled');
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('timeLeft').textContent = '0.0';
+            
+            submitScore();
+        }
+
+        document.getElementById('clickTarget').addEventListener('click', function() {
+            if (!gameActive) return;
+            
+            clicks++;
+            document.getElementById('clickCount').textContent = clicks;
+            
+            // Visual feedback
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 50);
+        });
+
+        async function submitScore() {
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                
+                const response = await fetch('@Url.Action("SubmitClickChallenge", "Quest")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ 
+                        clicks: clicks,
+                        duration: duration
+                    })
+                });
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultMessage');
+                
+                if (data.success) {
+                    resultDiv.className = 'result-message success';
+                    resultDiv.textContent = `Success! You earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
+                    
+                    setTimeout(() => {
+                        window.location.href = '@Url.Action("Index", "Quest")';
+                    }, 2000);
+                } else {
+                    resultDiv.className = 'result-message error';
+                    resultDiv.textContent = data.message || 'Failed to submit score';
+                }
+            } catch (error) {
+                console.error('Error submitting score:', error);
+                const resultDiv = document.getElementById('resultMessage');
+                resultDiv.className = 'result-message error';
+                resultDiv.textContent = 'Error submitting score';
+            }
+        }
+    </script>
+    
+    @Html.AntiForgeryToken()
+}

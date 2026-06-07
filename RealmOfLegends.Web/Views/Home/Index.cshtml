@@ -1,0 +1,237 @@
+﻿@{
+    ViewData["Title"] = "Welcome";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Realm of Legends</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/reset.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/animations.css" asp-append-version="true" />
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 50%, #0F0F1E 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .background-grid {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 1;
+        }
+        
+        @*@keyframes gridMove*@
+        @@keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .landing-container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            max-width: 800px;
+        }
+        
+        .logo {
+            font-size: 6rem;
+            font-family: 'Cinzel Decorative', serif;
+            color: #E94560;
+            text-shadow: 0 0 40px rgba(233, 69, 96, 0.6);
+            margin-bottom: 1rem;
+            animation: glow 2s ease-in-out infinite;
+            letter-spacing: 4px;
+        }
+        
+        .tagline {
+            font-size: 2rem;
+            font-family: 'Cinzel Decorative', serif;
+            color: #C8A84B;
+            text-shadow: 0 0 20px rgba(200, 168, 75, 0.5);
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            color: #8A8AAA;
+            font-family: 'Crimson Pro', serif;
+            margin-bottom: 3rem;
+            line-height: 1.8;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1.2rem 3rem;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #E94560;
+            color: white;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+        
+        .btn-primary:hover {
+            background: #ff5070;
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.8);
+            transform: translateY(-3px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #E8E8E8;
+            border: 2px solid #E94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(233, 69, 96, 0.1);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        .features {
+            margin-top: 4rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature {
+            padding: 1.5rem;
+            background: rgba(26, 26, 46, 0.6);
+            border: 1px solid rgba(233, 69, 96, 0.2);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            border-color: rgba(233, 69, 96, 0.5);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-family: 'Cinzel Decorative', serif;
+            color: #E94560;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-description {
+            font-family: 'Crimson Pro', serif;
+            color: #8A8AAA;
+            font-size: 0.9rem;
+        }
+        
+        @@keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 40px rgba(233, 69, 96, 0.6);
+            }
+            50% {
+                text-shadow: 0 0 60px rgba(233, 69, 96, 0.9);
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .logo {
+                font-size: 3rem;
+            }
+            .tagline {
+                font-size: 1.5rem;
+            }
+            .description {
+                font-size: 1rem;
+            }
+            .btn {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-grid"></div>
+    
+    <div class="landing-container fade-in">
+        <h1 class="logo">REALM OF LEGENDS</h1>
+        <h2 class="tagline">Forge Your Destiny</h2>
+        <p class="description">
+            Embark on an epic journey through a vast fantasy world. Complete quests, battle fearsome enemies in the Arena, 
+            collect legendary gear, and rise to become the ultimate champion of the realm.
+        </p>
+        
+        <div class="cta-buttons">
+            <a href="@Url.Action("Register", "Account")" class="btn btn-primary">Start Your Adventure</a>
+            <a href="@Url.Action("Login", "Account")" class="btn btn-secondary">Login</a>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🏰</div>
+                <h3 class="feature-title">Dashboard</h3>
+                <p class="feature-description">Track your progress, achievements, and view the leaderboards</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">📜</div>
+                <h3 class="feature-title">Quests</h3>
+                <p class="feature-description">Complete daily challenges and epic mini-games for rewards</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🛒</div>
+                <h3 class="feature-title">Shop</h3>
+                <p class="feature-description">Purchase powerful weapons, armor, and consumables</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⚔️</div>
+                <h3 class="feature-title">Arena</h3>
+                <p class="feature-description">Battle through 10 levels and defeat mighty bosses</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

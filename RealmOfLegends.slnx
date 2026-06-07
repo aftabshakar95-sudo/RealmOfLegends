@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="RealmOfLegends.Core/RealmOfLegends.Core.csproj" />
+  <Project Path="RealmOfLegends.Data/RealmOfLegends.Data.csproj" />
+  <Project Path="RealmOfLegends.Tests/RealmOfLegends.Tests.csproj" />
+  <Project Path="RealmOfLegends.Web/RealmOfLegends.Web.csproj" />
+</Solution>

@@ -1,0 +1,243 @@
+@using RealmOfLegends.Core.Entities
+@model List<Inventory>
+
+@{
+    ViewData["Title"] = "Inventory";
+    var player = ViewBag.Player as Player;
+    var currentCategory = ViewBag.Category as string ?? "All";
+    int bonusAtk = ViewBag.BonusAtk ?? 0;
+    int bonusDef = ViewBag.BonusDef ?? 0;
+}
+
+<style>
+    .inventory-container {
+        padding: 2rem;
+        color: white;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .inventory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        background: rgba(0,0,0,0.6);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #444;
+    }
+    .stats-summary h3 { margin-top: 0; color: #f1c40f; }
+    .stat-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    .stat-badge.atk { color: #e74c3c; }
+    .stat-badge.def { color: #3498db; }
+    
+    .filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .filter-btn {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid #666;
+        color: #ccc;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .filter-btn.active { background: #e67e22; border-color: #e67e22; color: white; }
+    
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    .item-card {
+        background: rgba(20,20,20,0.8);
+        border: 1px solid #444;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .item-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    .item-card.equipped {
+        border-color: #2ecc71;
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+    }
+    .equipped-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #2ecc71;
+        color: #000;
+        font-size: 0.8rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+    }
+    .item-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .item-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .item-category {
+        color: #888;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    .item-stats {
+        background: rgba(0,0,0,0.4);
+        border-radius: 6px;
+        padding: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+    .btn-equip {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        transition: background 0.3s;
+    }
+    .btn-equip:hover { background: #2980b9; }
+    .btn-unequip {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        transition: background 0.3s;
+    }
+    .btn-unequip:hover { background: #c0392b; }
+</style>
+
+<div class="inventory-container">
+    @if(TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" style="background:#2ecc71;color:#000;padding:1rem;border-radius:8px;margin-bottom:1rem;font-weight:bold;">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="inventory-header">
+        <div>
+            <h2>🎒 Your Inventory</h2>
+            <p>Manage your gear and prepare for battle.</p>
+        </div>
+        <div class="stats-summary">
+            <h3>Total Stats</h3>
+            <div class="stat-badge atk">⚔️ @(player.AttackPower + bonusAtk) ATK (@player.AttackPower Base + @bonusAtk Gear)</div>
+            <div class="stat-badge def">🛡️ @(player.DefenseRating + bonusDef) DEF (@player.DefenseRating Base + @bonusDef Gear)</div>
+        </div>
+    </div>
+
+    <div class="filters">
+        <a href="@Url.Action("Index", new { category = "All" })" class="filter-btn @(currentCategory == "All" ? "active" : "")">All</a>
+        <a href="@Url.Action("Index", new { category = "Weapon" })" class="filter-btn @(currentCategory == "Weapon" ? "active" : "")">Weapons</a>
+        <a href="@Url.Action("Index", new { category = "Armour" })" class="filter-btn @(currentCategory == "Armour" ? "active" : "")">Armour</a>
+        <a href="@Url.Action("Index", new { category = "Accessory" })" class="filter-btn @(currentCategory == "Accessory" ? "active" : "")">Accessories</a>
+        <a href="@Url.Action("Index", new { category = "Consumable" })" class="filter-btn @(currentCategory == "Consumable" ? "active" : "")">Consumables</a>
+    </div>
+
+    @if(!Model.Any())
+    {
+        <div style="text-align:center; padding: 4rem; background: rgba(0,0,0,0.5); border-radius: 12px;">
+            <h3>Your inventory is empty!</h3>
+            <p>Visit the shop to purchase new gear for your adventures.</p>
+            <a href="@Url.Action("Index", "Shop")" class="btn btn-primary mt-3" style="background:#f39c12;border:none;padding:10px 20px;font-weight:bold;">Go to Shop</a>
+        </div>
+    }
+    else
+    {
+        <div class="items-grid">
+            @foreach(var inv in Model)
+            {
+                var icon = inv.Item.Category == "Weapon" ? "🗡️" : 
+                           inv.Item.Category == "Armour" ? "🛡️" : 
+                           inv.Item.Category == "Accessory" ? "💍" : "💊";
+
+                <div class="item-card @(inv.IsEquipped ? "equipped" : "")">
+                    @if(inv.IsEquipped)
+                    {
+                        <span class="equipped-badge">EQUIPPED</span>
+                    }
+                    
+                    <span class="item-icon">@icon</span>
+                    <div class="item-name" style="color: @(inv.Item.Rarity == "Legendary" ? "#f1c40f" : inv.Item.Rarity == "Epic" ? "#9b59b6" : inv.Item.Rarity == "Rare" ? "#3498db" : inv.Item.Rarity == "Uncommon" ? "#2ecc71" : "#fff")">
+                        @inv.Item.Name
+                    </div>
+                    <div class="item-category">@inv.Item.Rarity @inv.Item.Category (@inv.Item.SlotType)</div>
+                    
+                    <div class="item-stats">
+                        @if(inv.Item.StatJson != "{}" && !string.IsNullOrEmpty(inv.Item.StatJson))
+                        {
+                            try
+                            {
+                                var stats = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(inv.Item.StatJson);
+                                if (stats != null)
+                                {
+                                    foreach(var stat in stats)
+                                    {
+                                        <span>@stat.Key: +@stat.Value </span>
+                                    }
+                                }
+                            }
+                            catch { /* ignore */ }
+                        }
+                        else
+                        {
+                            <span>No combat stats.</span>
+                        }
+                    </div>
+
+                    @if(inv.Item.Category != "Consumable")
+                    {
+                        if(inv.IsEquipped)
+                        {
+                            <form asp-action="Unequip" method="post">
+                                <input type="hidden" name="inventoryId" value="@inv.InventoryId" />
+                                <button type="submit" class="btn-unequip">Unequip</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="Equip" method="post">
+                                <input type="hidden" name="inventoryId" value="@inv.InventoryId" />
+                                <button type="submit" class="btn-equip">Equip</button>
+                            </form>
+                        }
+                    }
+                    else
+                    {
+                        <button class="btn-equip" style="background:#27ae60;">Use Item (@inv.Quantity left)</button>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

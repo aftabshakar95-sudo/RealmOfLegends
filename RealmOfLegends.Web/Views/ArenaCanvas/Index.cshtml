@@ -1,0 +1,310 @@
+@model RealmOfLegends.Core.Services.Arena.ArenaHubDto
+
+@{
+    ViewData["Title"] = "Arena - Level Select";
+}
+
+<style>
+    .arena-hub {
+        background: linear-gradient(135deg, #1a0d2a 0%, #0d0d2a 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+    }
+
+    .hub-title {
+        text-align: center;
+        color: #FFD700;
+        font-size: 3em;
+        font-weight: bold;
+        text-shadow: 0 0 20px #FFD700, 0 0 40px #FF8C00;
+        margin-bottom: 20px;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .progress-summary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid #FFD700;
+        border-radius: 15px;
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto 40px;
+        text-align: center;
+    }
+
+    .progress-summary h3 {
+        color: #FFD700;
+        margin-bottom: 15px;
+    }
+
+    .progress-summary .stat {
+        display: inline-block;
+        margin: 10px 20px;
+        color: #FFFFFF;
+        font-size: 1.2em;
+    }
+
+    .progress-summary .stat strong {
+        color: #00FF00;
+    }
+
+    .level-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .level-card {
+        background: linear-gradient(135deg, rgba(50, 30, 80, 0.8) 0%, rgba(20, 10, 40, 0.9) 100%);
+        border: 3px solid #8a3dda;
+        border-radius: 15px;
+        padding: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .level-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(138, 61, 218, 0.1) 0%, transparent 70%);
+        animation: rotate 8s linear infinite;
+        pointer-events: none;
+    }
+
+    @@keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .level-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(138, 61, 218, 0.5);
+        border-color: #FFD700;
+    }
+
+    .level-card.locked {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .level-card.locked::after {
+        content: '🔒 LOCKED';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2em;
+        color: #FF0000;
+        text-shadow: 0 0 10px #FF0000;
+    }
+
+    .level-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .level-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #FFD700;
+    }
+
+    .boss-badge {
+        background: linear-gradient(135deg, #FF0000, #8B0000);
+        color: #FFFFFF;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9em;
+        box-shadow: 0 0 10px #FF0000;
+    }
+
+    .enemy-info {
+        position: relative;
+        z-index: 1;
+    }
+
+    .enemy-name {
+        font-size: 1.5em;
+        color: #FFFFFF;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .enemy-stats {
+        display: flex;
+        justify-content: space-around;
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-label {
+        color: #AAA;
+        font-size: 0.8em;
+        text-transform: uppercase;
+    }
+
+    .stat-value {
+        color: #FFD700;
+        font-size: 1.3em;
+        font-weight: bold;
+    }
+
+    .enemy-description {
+        color: #CCC;
+        font-size: 0.95em;
+        line-height: 1.5;
+        margin: 15px 0;
+        font-style: italic;
+    }
+
+    .battle-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.2em;
+        font-weight: bold;
+        background: linear-gradient(135deg, #FF6B00, #FF4500);
+        border: none;
+        border-radius: 10px;
+        color: #FFFFFF;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(255, 69, 0, 0.4);
+        position: relative;
+        z-index: 1;
+    }
+
+    .battle-btn:hover {
+        background: linear-gradient(135deg, #FF8C00, #FF6B00);
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 140, 0, 0.6);
+    }
+
+    .victory-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: linear-gradient(135deg, #00FF00, #008800);
+        color: #FFFFFF;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 0.9em;
+        box-shadow: 0 0 15px #00FF00;
+        z-index: 1;
+    }
+</style>
+
+<div class="arena-hub">
+    <h1 class="hub-title">⚔️ ARENA OF LEGENDS ⚔️</h1>
+
+    <div class="progress-summary">
+        <h3>Your Progress</h3>
+        <div class="stat">
+            <strong>@Model.VictoriesCount</strong> / @Model.TotalEnemies Victories
+        </div>
+        <div class="stat">
+            Total Kills: <strong>@Model.TotalKills</strong>
+        </div>
+        <div class="stat">
+            Highest Level: <strong>@Model.HighestLevelCompleted</strong>
+        </div>
+    </div>
+
+    <div class="level-grid">
+        @if (Model == null)
+        {
+            <div style="color: white; text-align: center;">Model is NULL!</div>
+        }
+        else if (Model.Enemies == null)
+        {
+            <div style="color: white; text-align: center;">Model.Enemies is NULL!</div>
+        }
+        else if (!Model.Enemies.Any())
+        {
+            <div style="color: white; text-align: center;">No enemies found! Enemy count: @Model.Enemies.Count</div>
+        }
+        else
+        {
+            @foreach (var enemy in Model.Enemies)
+            {
+                var isLocked = enemy.LevelId > (Model.HighestLevelCompleted + 1);
+                var hasVictory = Model.Victories.Contains(enemy.Id);
+
+            <div class="level-card @(isLocked ? "locked" : "")">
+                @if (hasVictory)
+                {
+                    <div class="victory-badge">✓ DEFEATED</div>
+                }
+
+                <div class="level-header">
+                    <div class="level-number">Level @enemy.LevelId</div>
+                    @if (enemy.IsBoss)
+                    {
+                        <div class="boss-badge">BOSS</div>
+                    }
+                </div>
+
+                <div class="enemy-info">
+                    <div class="enemy-name">@enemy.Name</div>
+
+                    <div class="enemy-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Health</div>
+                            <div class="stat-value">@enemy.Health</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Attack</div>
+                            <div class="stat-value">@enemy.Attack</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Defense</div>
+                            <div class="stat-value">@enemy.Defense</div>
+                        </div>
+                    </div>
+
+                    <div class="enemy-description">
+                        @enemy.Description
+                    </div>
+
+                    @if (!isLocked)
+                    {
+                        <button class="battle-btn" onclick="startBattle(@enemy.Id, @enemy.LevelId)">
+                            @(hasVictory ? "⚔️ REMATCH" : "⚔️ ENTER BATTLE")
+                        </button>
+                    }
+                </div>
+            </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function startBattle(enemyId, levelId) {
+            window.location.href = `/ArenaCanvas/Fight?enemyId=${enemyId}&levelId=${levelId}`;
+        }
+    </script>
+}

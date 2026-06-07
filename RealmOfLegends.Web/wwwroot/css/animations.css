@@ -1,0 +1,250 @@
+/* Animation Library - Realm of Legends */
+
+/* Glow Pulse */
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(233, 69, 96, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(233, 69, 96, 0.6);
+    }
+}
+
+.glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Gold Shimmer */
+@keyframes goldShimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+.gold-shimmer {
+    background: linear-gradient(90deg, 
+        var(--color-gold) 0%, 
+        #FFD700 25%, 
+        var(--color-gold) 50%, 
+        #FFD700 75%, 
+        var(--color-gold) 100%);
+    background-size: 200% 100%;
+    animation: goldShimmer 3s linear infinite;
+}
+
+/* Float Up */
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) scale(1.5);
+        opacity: 0;
+    }
+}
+
+.float-up {
+    animation: floatUp 0.8s ease-out forwards;
+}
+
+/* Fade In */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Slide In from Left */
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.4s ease-out;
+}
+
+/* Slide In from Right */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+}
+
+/* Slide In from Top */
+@keyframes slideInTop {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.slide-in-top {
+    animation: slideInTop 0.4s ease-out;
+}
+
+/* Bounce */
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.bounce {
+    animation: bounce 0.6s ease-in-out;
+}
+
+/* Shake (Screen Shake) */
+@keyframes shake {
+    0%, 100% { transform: translate(0, 0); }
+    10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 2px); }
+    20%, 40%, 60%, 80% { transform: translate(5px, -2px); }
+}
+
+.shake {
+    animation: shake 0.4s ease-in-out;
+}
+
+/* Spin */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Scale Up */
+@keyframes scaleUp {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.scale-up {
+    animation: scaleUp 0.3s ease-out;
+}
+
+/* Count Up Effect (use with JS) */
+@keyframes countUp {
+    from {
+        opacity: 0.5;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.count-up {
+    animation: countUp 0.4s ease-out;
+}
+
+/* Success Burst */
+@keyframes successBurst {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 20px rgba(0, 200, 83, 0);
+    }
+}
+
+.success-burst {
+    animation: successBurst 0.6s ease-out;
+}
+
+/* Rarity Glow by Type */
+.rarity-glow-common {
+    box-shadow: 0 0 15px rgba(128, 128, 128, 0.5);
+}
+
+.rarity-glow-uncommon {
+    box-shadow: 0 0 15px rgba(0, 200, 83, 0.5);
+}
+
+.rarity-glow-rare {
+    box-shadow: 0 0 15px rgba(41, 121, 255, 0.5);
+}
+
+.rarity-glow-epic {
+    box-shadow: 0 0 15px rgba(170, 0, 255, 0.5);
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+.rarity-glow-legendary {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+    animation: goldShimmer 3s linear infinite, glowPulse 2s ease-in-out infinite;
+}
+
+/* Breathing Animation (for idle sprites) */
+@keyframes breathe {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.breathe {
+    animation: breathe 2s ease-in-out infinite;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

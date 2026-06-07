@@ -1,0 +1,455 @@
+@{
+    ViewData["Title"] = "Arena Battle";
+    Layout = null; // Remove layout to make it truly full screen
+    var enemyId = ViewData["EnemyId"];
+    var levelId = ViewData["LevelId"];
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+        width: 100%;
+        height: 100%;
+    }
+
+    .battle-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+        overflow: hidden;
+    }
+
+    #arenaCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: block;
+    }
+
+    .battle-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        z-index: 100;
+    }
+
+    .btn-action {
+        padding: 15px 40px;
+        font-size: 1.2em;
+        font-weight: bold;
+        border: 3px solid #FFD700;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-attack {
+        background: linear-gradient(135deg, #FF4500, #8B0000);
+        color: #FFFFFF;
+    }
+
+    .btn-attack:hover:not(:disabled) {
+        background: linear-gradient(135deg, #FF6347, #FF4500);
+        transform: scale(1.1);
+        box-shadow: 0 0 20px #FF4500;
+    }
+
+    .btn-special {
+        background: linear-gradient(135deg, #9370DB, #4B0082);
+        color: #FFFFFF;
+    }
+
+    .btn-special:hover:not(:disabled) {
+        background: linear-gradient(135deg, #BA55D3, #9370DB);
+        transform: scale(1.1);
+        box-shadow: 0 0 20px #9370DB;
+    }
+
+    .btn-action:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .battle-log {
+        position: absolute;
+        top: 80px;
+        right: 20px;
+        width: 300px;
+        max-height: 400px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #FFD700;
+        border-radius: 10px;
+        padding: 15px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        color: #FFFFFF;
+        font-size: 0.9em;
+        z-index: 100;
+    }
+
+    .battle-log h4 {
+        color: #FFD700;
+        margin: 0 0 10px 0;
+        text-align: center;
+        border-bottom: 1px solid #FFD700;
+        padding-bottom: 5px;
+    }
+
+    .log-entry {
+        margin: 8px 0;
+        padding: 5px;
+        border-left: 3px solid #FFD700;
+        padding-left: 10px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .loading-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a0d2a 0%, #0d0d2a 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        border: 8px solid rgba(255, 215, 0, 0.2);
+        border-top: 8px solid #FFD700;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: #FFD700;
+        font-size: 1.5em;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .result-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(20, 10, 40, 0.95), rgba(50, 30, 80, 0.95));
+        border: 4px solid #FFD700;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        z-index: 2000;
+        min-width: 400px;
+        display: none;
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+    }
+
+    .result-modal.show {
+        display: block;
+        animation: modalPop 0.5s ease;
+    }
+
+    @@keyframes modalPop {
+        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .result-title {
+        font-size: 3em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-shadow: 0 0 20px currentColor;
+    }
+
+    .result-title.victory {
+        color: #00FF00;
+    }
+
+    .result-title.defeat {
+        color: #FF0000;
+    }
+
+    .result-rewards {
+        margin: 20px 0;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+    }
+
+    .reward-item {
+        color: #FFD700;
+        font-size: 1.2em;
+        margin: 10px 0;
+    }
+
+    .btn-return {
+        padding: 15px 40px;
+        font-size: 1.2em;
+        background: linear-gradient(135deg, #FFD700, #FF8C00);
+        border: none;
+        border-radius: 10px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+    }
+
+    .btn-return:hover {
+        background: linear-gradient(135deg, #FFED4E, #FFD700);
+        transform: scale(1.1);
+    }
+</style>
+</head>
+<body>
+
+<div class="battle-container">
+    <canvas id="arenaCanvas"></canvas>
+
+    <div class="battle-controls" id="battleControls" style="display: none;">
+        <button class="btn-action btn-attack" id="btnAttack" onclick="playerAttack()">
+            ⚔️ Attack
+        </button>
+        <button class="btn-action btn-special" id="btnSpecial" onclick="playerSpecial()">
+            ✨ Special Ability
+        </button>
+    </div>
+
+    <div class="battle-log" id="battleLog">
+        <h4>Battle Log</h4>
+        <div id="logEntries"></div>
+    </div>
+
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Arena...</div>
+    </div>
+
+    <div class="result-modal" id="resultModal">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-rewards" id="resultRewards"></div>
+        <button class="btn-return" onclick="returnToHub()">Return to Arena Hub</button>
+    </div>
+</div>
+
+<script src="~/js/arena/core-engine.js"></script>
+<script src="~/js/arena/backgrounds.js"></script>
+<script src="~/js/arena/particles.js"></script>
+<script src="~/js/arena/camera-effects.js"></script>
+<script src="~/js/arena/arena-combat.js"></script>
+
+<script>
+        let combat = null;
+
+        async function initializeBattle() {
+            try {
+                console.log('Starting battle initialization...');
+                const enemyId = @Html.Raw(Json.Serialize(enemyId));
+                const levelId = @Html.Raw(Json.Serialize(levelId));
+                
+                console.log('Enemy ID:', enemyId, 'Level ID:', levelId);
+
+                // Verify classes are loaded
+                if (typeof ArenaCombat === 'undefined') {
+                    console.error('ArenaCombat class not found! Check if arena-combat.js loaded.');
+                    document.getElementById('loadingScreen').innerHTML = '<div class="loading-text" style="color: red;">Error: Combat system not loaded</div>';
+                    return;
+                }
+
+                // Initialize combat engine
+                combat = new ArenaCombat('arenaCanvas', {
+                    enemyId: enemyId,
+                    levelId: levelId
+                });
+
+                console.log('Combat instance created');
+
+                // Setup callbacks
+                combat.onBattleEnd = handleBattleEnd;
+                combat.onLogUpdate = addLogEntry;
+
+                // Initialize
+                console.log('Initializing combat...');
+                await combat.initialize();
+                console.log('Combat initialized successfully');
+
+                // Hide loading, show controls
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('battleControls').style.display = 'flex';
+                
+                console.log('Battle ready!');
+            } catch (error) {
+                console.error('Error initializing battle:', error);
+                document.getElementById('loadingScreen').innerHTML = 
+                    '<div class="loading-text" style="color: red;">Error: ' + error.message + '</div>' +
+                    '<div class="loading-text" style="font-size: 0.8em;">Check browser console for details</div>';
+            }
+        }
+
+        function playerAttack() {
+            if (combat && combat.state === 'player-turn') {
+                disableControls();
+                combat.playerAttack().then(() => {
+                    if (combat.state === 'player-turn') {
+                        enableControls();
+                    }
+                });
+            }
+        }
+
+        function playerSpecial() {
+            if (combat && combat.state === 'player-turn') {
+                disableControls();
+                combat.playerSpecialAbility().then(() => {
+                    if (combat.state === 'player-turn') {
+                        enableControls();
+                    }
+                });
+            }
+        }
+
+        function disableControls() {
+            document.getElementById('btnAttack').disabled = true;
+            document.getElementById('btnSpecial').disabled = true;
+        }
+
+        function enableControls() {
+            document.getElementById('btnAttack').disabled = false;
+            document.getElementById('btnSpecial').disabled = false;
+        }
+
+        function addLogEntry(message) {
+            const logEntries = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            logEntries.appendChild(entry);
+
+            // Auto-scroll to bottom
+            logEntries.scrollTop = logEntries.scrollHeight;
+
+            // Keep only last 20 entries
+            while (logEntries.children.length > 20) {
+                logEntries.removeChild(logEntries.firstChild);
+            }
+        }
+
+        function handleBattleEnd(result) {
+            disableControls();
+
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('resultTitle');
+            const rewards = document.getElementById('resultRewards');
+
+            if (result === 'victory') {
+                title.textContent = '⚔️ VICTORY! ⚔️';
+                title.className = 'result-title victory';
+                rewards.innerHTML = `
+                    <div class="reward-item">💰 +50 Gold</div>
+                    <div class="reward-item">⭐ +25 Experience</div>
+                    <div class="reward-item">🏆 Progress Unlocked!</div>
+                `;
+            } else {
+                title.textContent = '💀 DEFEAT 💀';
+                title.className = 'result-title defeat';
+                rewards.innerHTML = `
+                    <div class="reward-item">Better luck next time...</div>
+                    <div class="reward-item">Train harder and try again!</div>
+                `;
+            }
+
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 2000);
+        }
+
+        function returnToHub() {
+            window.location.href = '/ArenaCanvas';
+        }
+
+        // Start battle on page load
+        window.addEventListener('load', () => {
+            console.log('Page loaded, testing canvas...');
+            
+            // Test canvas rendering
+            const canvas = document.getElementById('arenaCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                console.error('Failed to get canvas context!');
+                return;
+            }
+            
+            // Set canvas size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            
+            // Draw test rectangle to verify canvas works
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(100, 100, 200, 100);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '24px Arial';
+            ctx.fillText('Canvas Test - If you see this, canvas works!', 120, 160);
+            
+            console.log('Test rectangle drawn');
+            
+            // Wait a moment, then initialize battle
+            setTimeout(() => {
+                initializeBattle();
+            }, 1000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (combat) {
+                combat.destroy();
+            }
+        });
+    </script>
+
+</body>
+</html>

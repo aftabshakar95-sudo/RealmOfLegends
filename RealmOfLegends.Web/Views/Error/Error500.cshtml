@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Server Error";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Realm of Legends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Crimson+Pro:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/variables.css" />
+    <link rel="stylesheet" href="~/css/reset.css" />
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-container {
+            text-align: center;
+            z-index: 2;
+            padding: 2rem;
+        }
+        
+        .error-code {
+            font-size: 10rem;
+            font-family: 'Cinzel Decorative', serif;
+            color: #E94560;
+            text-shadow: 0 0 40px rgba(233, 69, 96, 0.6);
+            margin-bottom: 1rem;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            font-family: 'Cinzel Decorative', serif;
+            color: #E8E8E8;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            font-size: 1.2rem;
+            color: #8A8AAA;
+            margin-bottom: 2rem;
+            font-family: 'Crimson Pro', serif;
+        }
+        
+        .error-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #E94560;
+            color: #fff;
+            border-radius: 8px;
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .error-btn:hover {
+            background: #ff5070;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .lost-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+        
+        @@keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 40px rgba(233, 69, 96, 0.6);
+            }
+            50% {
+                text-shadow: 0 0 60px rgba(233, 69, 96, 0.8);
+            }
+        }
+        
+        .background-grid {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 1;
+        }
+        
+        @@keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-grid"></div>
+    <div class="error-container">
+        <div class="lost-icon">💥</div>
+        <div class="error-code">500</div>
+        <h1 class="error-title">Server Error</h1>
+        <p class="error-message">
+            A dark force has corrupted the realm's core.<br />
+            Our wizards are working to restore order. Please try again soon.
+        </p>
+        <a href="/" class="error-btn">Return Home</a>
+    </div>
+</body>
+</html>

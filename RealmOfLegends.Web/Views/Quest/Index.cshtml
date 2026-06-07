@@ -1,0 +1,217 @@
+@using RealmOfLegends.Core.Entities
+@{
+    ViewData["Title"] = "Quests";
+    var player = ViewBag.Player as Player;
+    var allQuests = ViewBag.AllQuests as List<Quest> ?? new List<Quest>();
+    var playerQuestIds = ViewBag.PlayerQuestIds as List<int> ?? new List<int>();
+    var playerQuests = ViewBag.PlayerQuests as List<PlayerQuest> ?? new List<PlayerQuest>();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/quests.css" asp-append-version="true" />
+}
+
+<div class="quests-container">
+    <div class="quests-header fade-in">
+        <h1 class="page-title">📜 Quest Board</h1>
+        <p class="page-subtitle">Complete quests to earn gold and experience</p>
+        
+        <div class="player-summary">
+            <span class="summary-item">💰 Gold: @player?.Gold</span>
+            <span class="summary-item">⭐ Level: @player?.Level</span>
+            <span class="summary-item">🎯 XP: @player?.XP</span>
+        </div>
+    </div>
+    
+    <div class="mini-games-section panel fade-in">
+        <h2 class="section-title">🎮 Mini-Games</h2>
+        <p class="section-subtitle">Test your skills in these challenges</p>
+        
+        <div class="mini-games-grid">
+            <a href="@Url.Action("ClickChallenge", "Quest")" class="mini-game-card">
+                <div class="game-icon">👆</div>
+                <h3 class="game-title">Click Challenge</h3>
+                <p class="game-desc">Click as fast as you can!</p>
+                <div class="game-rewards">
+                    <span>💰 50 Gold</span>
+                    <span>⭐ 100 XP</span>
+                </div>
+            </a>
+            
+            <a href="@Url.Action("MemoryMatch", "Quest")" class="mini-game-card">
+                <div class="game-icon">🧠</div>
+                <h3 class="game-title">Memory Match</h3>
+                <p class="game-desc">Match all the pairs</p>
+                <div class="game-rewards">
+                    <span>💰 75 Gold</span>
+                    <span>⭐ 150 XP</span>
+                </div>
+            </a>
+            
+            <a href="@Url.Action("Riddle", "Quest")" class="mini-game-card">
+                <div class="game-icon">❓</div>
+                <h3 class="game-title">Riddle Master</h3>
+                <p class="game-desc">Solve the ancient riddle</p>
+                <div class="game-rewards">
+                    <span>💰 100 Gold</span>
+                    <span>⭐ 200 XP</span>
+                </div>
+            </a>
+            
+            <a href="@Url.Action("SliderPuzzle", "Quest")" class="mini-game-card">
+                <div class="game-icon">🧩</div>
+                <h3 class="game-title">Slider Puzzle</h3>
+                <p class="game-desc">Arrange the tiles correctly</p>
+                <div class="game-rewards">
+                    <span>💰 125 Gold</span>
+                    <span>⭐ 250 XP</span>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <div class="task-quests-section">
+        <h2 class="section-title">📋 Task Quests</h2>
+        <p class="section-subtitle">Complete various tasks to earn rewards</p>
+        
+        <div class="quests-grid">
+            @foreach(var quest in allQuests)
+            {
+                var playerQuest = playerQuests.FirstOrDefault(pq => pq.QuestId == quest.QuestId);
+                var status = playerQuest?.Status ?? "Available";
+                var statusClass = status.ToLower();
+                
+                <div class="quest-card panel @statusClass">
+                    <div class="quest-header">
+                        <h3 class="quest-title">@quest.Title</h3>
+                        @if(status == "Completed")
+                        {
+                            <span class="quest-badge completed-badge">✓ Completed</span>
+                        }
+                        else if(status == "InProgress")
+                        {
+                            <span class="quest-badge progress-badge">⏳ In Progress</span>
+                        }
+                        else
+                        {
+                            <span class="quest-badge available-badge">✨ Available</span>
+                        }
+                    </div>
+                    
+                    <p class="quest-description">@quest.Description</p>
+                    
+                    <div class="quest-rewards">
+                        <span class="reward-item">💰 @quest.RewardGold Gold</span>
+                        <span class="reward-item">⭐ @quest.RewardXP XP</span>
+                    </div>
+                    
+                    <div class="quest-footer">
+                        @if(status == "Available")
+                        {
+                            <button class="btn btn-start" onclick="startQuest(@quest.QuestId)">
+                                Start Quest
+                            </button>
+                        }
+                        else if(status == "InProgress")
+                        {
+                            <button class="btn btn-complete" onclick="completeQuest(@quest.QuestId)">
+                                Complete Quest
+                            </button>
+                        }
+                        else if(status == "Completed")
+                        {
+                            <button class="btn btn-disabled" disabled>
+                                Completed
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function startQuest(questId) {
+            if(!confirm('Start this quest?')) return;
+            
+            try {
+                const response = await fetch('@Url.Action("StartQuest", "Quest")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ questId })
+                });
+                
+                const data = await response.json();
+                
+                if(data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch(error) {
+                console.error('Error starting quest:', error);
+                alert('Failed to start quest');
+            }
+        }
+        
+        async function completeQuest(questId) {
+            if(!confirm('Complete this quest?')) return;
+            
+            try {
+                const response = await fetch('@Url.Action("CompleteQuest", "Quest")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ questId })
+                });
+                
+                const data = await response.json();
+                
+                if(data.success) {
+                    showRewardAnimation(data.rewards);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert(data.message);
+                }
+            } catch(error) {
+                console.error('Error completing quest:', error);
+                alert('Failed to complete quest');
+            }
+        }
+        
+        function showRewardAnimation(rewards) {
+            const overlay = document.createElement('div');
+            overlay.className = 'reward-overlay';
+            overlay.innerHTML = `
+                <div class="reward-popup">
+                    <h2>Quest Completed!</h2>
+                    <div class="rewards-display">
+                        <div class="reward-item-large">
+                            <span class="reward-icon">💰</span>
+                            <span class="reward-value">+${rewards.gold} Gold</span>
+                        </div>
+                        <div class="reward-item-large">
+                            <span class="reward-icon">⭐</span>
+                            <span class="reward-value">+${rewards.xp} XP</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            setTimeout(() => {
+                overlay.remove();
+            }, 2500);
+        }
+    </script>
+}

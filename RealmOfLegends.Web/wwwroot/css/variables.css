@@ -1,0 +1,80 @@
+/* Design Tokens - Realm of Legends */
+:root {
+    /* Colors */
+    --color-primary: #1A1A2E;
+    --color-accent: #E94560;
+    --color-gold: #C8A84B;
+    --color-text: #E8E8E8;
+    --color-muted: #8A8AAA;
+    --color-bg-dark: #0F0F1E;
+    --color-surface: #252540;
+    --color-success: #00C853;
+    --color-error: #FF3333;
+    
+    /* Rarity Colors */
+    --color-common: #808080;
+    --color-uncommon: #00C853;
+    --color-rare: #2979FF;
+    --color-epic: #AA00FF;
+    --color-legendary: #FFD700;
+    
+    /* Fonts */
+    --font-display: 'Cinzel Decorative', serif;
+    --font-body: 'Crimson Pro', serif;
+    --font-ui: 'Inter', sans-serif;
+    
+    /* Font Sizes */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+    
+    /* Border Radius */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --border-radius-full: 9999px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    --shadow-glow-red: 0 0 20px rgba(233, 69, 96, 0.4);
+    --shadow-glow-gold: 0 0 20px rgba(200, 168, 75, 0.5);
+    --shadow-glow-accent: 0 0 30px rgba(233, 69, 96, 0.6);
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-med: 0.35s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Z-Index */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    
+    /* Layout */
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 80px;
+    --topbar-height: 70px;
+}

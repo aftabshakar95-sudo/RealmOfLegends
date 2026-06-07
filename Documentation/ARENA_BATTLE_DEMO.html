@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Battle System - Demonstration</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff4500;
+            font-size: 3em;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff4500;
+        }
+
+        .battle-stage {
+            position: relative;
+            height: 500px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            border-radius: 15px;
+            margin: 30px 0;
+            overflow: hidden;
+            border: 2px solid #444;
+        }
+
+        .battle-ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-top: 3px solid #444;
+        }
+
+        .fighter {
+            position: absolute;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.5s ease;
+        }
+
+        .fighter.player {
+            left: 15%;
+        }
+
+        .fighter.enemy {
+            right: 15%;
+        }
+
+        .fighter-sprite {
+            font-size: 120px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.8));
+            transition: all 0.3s ease;
+        }
+
+        .fighter.attacking .fighter-sprite {
+            animation: attack 0.6s ease;
+        }
+
+        .fighter.hit .fighter-sprite {
+            animation: hit 0.5s ease;
+        }
+
+        .fighter.defeated .fighter-sprite {
+            animation: defeat 1s ease forwards;
+        }
+
+        @keyframes attack {
+            0%, 100% { transform: translateX(0) scale(1); }
+            30% { transform: translateX(50px) scale(1.2) rotate(10deg); }
+            50% { transform: translateX(50px) scale(1.2) rotate(-10deg); }
+            70% { transform: translateX(0) scale(1.1); }
+        }
+
+        @keyframes hit {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-20px); filter: brightness(2); }
+            50% { transform: translateX(20px); }
+            75% { transform: translateX(-10px); }
+        }
+
+        @keyframes defeat {
+            0% { transform: translateY(0) rotate(0); opacity: 1; }
+            50% { transform: translateY(-30px) rotate(180deg); }
+            100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+        }
+
+        .health-bar-container {
+            width: 200px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 5px;
+            border: 2px solid #333;
+        }
+
+        .fighter-name {
+            color: #fff;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000 0%, #ff4500 50%, #ff6600 100%);
+            transition: width 0.8s ease;
+            border-radius: 5px;
+        }
+
+        .health-fill.player-health {
+            background: linear-gradient(90deg, #00ff00 0%, #44ff44 50%, #66ff66 100%);
+        }
+
+        .health-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            z-index: 1;
+        }
+
+        .damage-indicator {
+            position: absolute;
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: damageFloat 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .damage-indicator.crit {
+            color: #ffeb3b;
+            font-size: 3em;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        @keyframes damageFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-50px) scale(1.5); }
+            100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+        }
+
+        .battle-log {
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 2px solid #444;
+            margin: 20px 0;
+        }
+
+        .log-message {
+            color: #aaa;
+            font-size: 0.9em;
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #666;
+            padding-left: 10px;
+        }
+
+        .log-message.player-action {
+            border-left-color: #4caf50;
+            color: #a5d6a7;
+        }
+
+        .log-message.enemy-action {
+            border-left-color: #f44336;
+            color: #ef9a9a;
+        }
+
+        .log-message.critical {
+            border-left-color: #ffeb3b;
+            color: #fff59d;
+            font-weight: bold;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #8b0000 0%, #ff4500 100%);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 1.5em;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(255, 69, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 69, 0, 0.7);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+
+        .feature-card h3 {
+            color: #ff4500;
+            margin-top: 0;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li:before {
+            content: "⚔️ ";
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ Arena Battle System ⚔️</h1>
+        
+        <div class="info-box">
+            <h2>🎮 Live Battle Demonstration</h2>
+            <p>This is a working demonstration of the turn-based 2D combat system implemented in Realm of Legends. 
+            Watch as characters fight with animations, health bars, damage indicators, and battle logs!</p>
+        </div>
+
+        <div class="battle-stage" id="battleStage">
+            <div class="battle-ground"></div>
+            
+            <div class="fighter player" id="playerFighter">
+                <div class="health-bar-container">
+                    <div class="fighter-name">Hero Warrior</div>
+                    <div class="health-bar">
+                        <div class="health-fill player-health" id="playerHealthBar" style="width: 100%"></div>
+                        <div class="health-text" id="playerHealthText">150 / 150</div>
+                    </div>
+                </div>
+                <div class="fighter-sprite">🗡️</div>
+            </div>
+            
+            <div class="fighter enemy" id="enemyFighter">
+                <div class="health-bar-container">
+                    <div class="fighter-name">Orc Warrior</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="enemyHealthBar" style="width: 100%"></div>
+                        <div class="health-text" id="enemyHealthText">180 / 180</div>
+                    </div>
+                </div>
+                <div class="fighter-sprite">👹</div>
+            </div>
+        </div>
+
+        <div class="battle-log" id="battleLog">
+            <div class="log-message">⚔️ Click "START DEMO BATTLE" to begin!</div>
+        </div>
+
+        <div class="controls">
+            <button onclick="startDemoBattle()" id="battleBtn">⚔️ START DEMO BATTLE ⚔️</button>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>🎬 Battle Animations</h3>
+                <ul>
+                    <li>Attack animations with movement</li>
+                    <li>Hit reactions and shake effects</li>
+                    <li>Defeat animations with rotation</li>
+                    <li>Smooth transitions between states</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>💚 Health System</h3>
+                <ul>
+                    <li>Real-time health bar updates</li>
+                    <li>Smooth percentage transitions</li>
+                    <li>Color-coded bars (green/red)</li>
+                    <li>Numeric HP display</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>💥 Damage Indicators</h3>
+                <ul>
+                    <li>Floating damage numbers</li>
+                    <li>Critical hit effects (yellow)</li>
+                    <li>Position-based spawning</li>
+                    <li>Auto-cleanup after animation</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>📜 Battle Log</h3>
+                <ul>
+                    <li>Turn-by-turn combat log</li>
+                    <li>Color-coded messages</li>
+                    <li>Critical hit notifications</li>
+                    <li>Auto-scrolling updates</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>⚔️ Combat Mechanics</h3>
+                <ul>
+                    <li>Turn-based system</li>
+                    <li>Damage randomization</li>
+                    <li>15% critical hit chance</li>
+                    <li>Victory/defeat conditions</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎯 Smart Design</h3>
+                <ul>
+                    <li>Responsive layout</li>
+                    <li>Smooth CSS animations</li>
+                    <li>Async battle flow control</li>
+                    <li>Clean visual feedback</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-box" style="margin-top: 40px;">
+            <h2>🔧 Technical Implementation</h2>
+            <p><strong>Frontend:</strong> Pure JavaScript (ES6+) with async/await for battle flow control</p>
+            <p><strong>Animations:</strong> CSS3 keyframe animations with transform and opacity</p>
+            <p><strong>Architecture:</strong> Event-driven system with promise-based timing</p>
+            <p><strong>Backend:</strong> ASP.NET Core MVC with Entity Framework for persistence</p>
+        </div>
+    </div>
+
+    <script>
+        let playerHP = 150;
+        let enemyHP = 180;
+        const playerMaxHP = 150;
+        const enemyMaxHP = 180;
+        let battleActive = false;
+
+        function addLog(message, type = '') {
+            const log = document.getElementById('battleLog');
+            const logMessage = document.createElement('div');
+            logMessage.className = `log-message ${type}`;
+            logMessage.textContent = message;
+            log.appendChild(logMessage);
+            log.scrollTop = log.scrollHeight;
+            
+            while (log.children.length > 10) {
+                log.removeChild(log.firstChild);
+            }
+        }
+
+        function showDamage(damage, x, y, isCrit = false) {
+            const indicator = document.createElement('div');
+            indicator.className = `damage-indicator ${isCrit ? 'crit' : ''}`;
+            indicator.textContent = `-${damage}${isCrit ? ' CRIT!' : ''}`;
+            indicator.style.left = x + 'px';
+            indicator.style.top = y + 'px';
+            
+            document.getElementById('battleStage').appendChild(indicator);
+            
+            setTimeout(() => indicator.remove(), 1000);
+        }
+
+        function updateHealthBar(isPlayer, currentHP, maxHP) {
+            const percentage = Math.max(0, (currentHP / maxHP) * 100);
+            
+            if (isPlayer) {
+                document.getElementById('playerHealthBar').style.width = percentage + '%';
+                document.getElementById('playerHealthText').textContent = `${Math.max(0, currentHP)} / ${maxHP}`;
+            } else {
+                document.getElementById('enemyHealthBar').style.width = percentage + '%';
+                document.getElementById('enemyHealthText').textContent = `${Math.max(0, currentHP)} / ${maxHP}`;
+            }
+        }
+
+        async function playAttack(attacker, defender, damage, isCrit) {
+            const attackerEl = document.getElementById(attacker + 'Fighter');
+            const defenderEl = document.getElementById(defender + 'Fighter');
+            
+            attackerEl.classList.add('attacking');
+            await sleep(300);
+            
+            defenderEl.classList.add('hit');
+            
+            const rect = defenderEl.getBoundingClientRect();
+            const stageRect = document.getElementById('battleStage').getBoundingClientRect();
+            showDamage(damage, rect.left - stageRect.left + 50, rect.top - stageRect.top + 50, isCrit);
+            
+            await sleep(500);
+            
+            attackerEl.classList.remove('attacking');
+            defenderEl.classList.remove('hit');
+            await sleep(200);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startDemoBattle() {
+            if (battleActive) return;
+            
+            battleActive = true;
+            const button = document.getElementById('battleBtn');
+            button.disabled = true;
+            button.textContent = '⚔️ BATTLE IN PROGRESS... ⚔️';
+            
+            playerHP = playerMaxHP;
+            enemyHP = enemyMaxHP;
+            
+            document.getElementById('playerFighter').classList.remove('defeated');
+            document.getElementById('enemyFighter').classList.remove('defeated');
+            document.getElementById('battleLog').innerHTML = '';
+            
+            updateHealthBar(true, playerHP, playerMaxHP);
+            updateHealthBar(false, enemyHP, enemyMaxHP);
+            
+            addLog('⚔️ Battle begins!');
+            await sleep(1000);
+            
+            let turn = 1;
+            
+            while (playerHP > 0 && enemyHP > 0 && turn <= 20) {
+                // Player turn
+                const playerDamage = Math.floor(25 + Math.random() * 20);
+                const playerCrit = Math.random() < 0.15;
+                const finalPlayerDamage = playerCrit ? Math.floor(playerDamage * 1.8) : playerDamage;
+                
+                addLog(`⚔️ You attack for ${finalPlayerDamage} damage!${playerCrit ? ' CRITICAL HIT!' : ''}`, 'player-action' + (playerCrit ? ' critical' : ''));
+                await playAttack('player', 'enemy', finalPlayerDamage, playerCrit);
+                
+                enemyHP -= finalPlayerDamage;
+                updateHealthBar(false, enemyHP, enemyMaxHP);
+                
+                if (enemyHP <= 0) break;
+                
+                await sleep(800);
+                
+                // Enemy turn
+                const enemyDamage = Math.floor(20 + Math.random() * 25);
+                const enemyCrit = Math.random() < 0.1;
+                const finalEnemyDamage = enemyCrit ? Math.floor(enemyDamage * 2) : enemyDamage;
+                
+                addLog(`💀 Orc Warrior attacks for ${finalEnemyDamage} damage!${enemyCrit ? ' CRITICAL HIT!' : ''}`, 'enemy-action' + (enemyCrit ? ' critical' : ''));
+                await playAttack('enemy', 'player', finalEnemyDamage, enemyCrit);
+                
+                playerHP -= finalEnemyDamage;
+                updateHealthBar(true, playerHP, playerMaxHP);
+                
+                if (playerHP <= 0) break;
+                
+                await sleep(800);
+                turn++;
+            }
+            
+            await sleep(500);
+            
+            if (playerHP > 0) {
+                document.getElementById('enemyFighter').classList.add('defeated');
+                addLog('🏆 VICTORY! Enemy defeated!', 'player-action');
+            } else {
+                document.getElementById('playerFighter').classList.add('defeated');
+                addLog('💀 DEFEAT! You were defeated...', 'enemy-action');
+            }
+            
+            await sleep(2000);
+            
+            battleActive = false;
+            button.disabled = false;
+            button.textContent = '⚔️ START DEMO BATTLE ⚔️';
+            addLog('Click button to battle again!');
+        }
+    </script>
+</body>
+</html>

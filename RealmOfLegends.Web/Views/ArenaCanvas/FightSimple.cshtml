@@ -1,0 +1,984 @@
+@{
+    ViewData["Title"] = "Arena Battle";
+    Layout = null;
+    var enemyId = ViewData["EnemyId"];
+    var levelId = ViewData["LevelId"];
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Arena Battle - Realm of Legends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            width: 100vw; height: 100vh;
+            cursor: none !important; /* Force mouse hide */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #battleCanvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* Scanlines & Vignette for AAA feel */
+        .post-processing {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%),
+                        linear-gradient(rgba(255,255,255,0.02) 50%, transparent 50%);
+            background-size: 100% 100%, 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ── NEXT-GEN HUD ── */
+        .hud {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 30px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .fighter-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 380px;
+        }
+        .fighter-info.enemy { align-items: flex-end; }
+
+        .name-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .fighter-info.enemy .name-row { flex-direction: row-reverse; }
+
+        .level-badge {
+            background: linear-gradient(135deg, #FFD700, #F57F17);
+            color: #000;
+            font-weight: 900;
+            font-family: 'Cinzel', serif;
+            padding: 4px 12px;
+            border-radius: 2px;
+            font-size: 1em;
+            box-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .fighter-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8em;
+            font-weight: 900;
+            color: #FFF;
+            text-shadow: 0 0 15px rgba(255,255,255,0.5), 2px 2px 0 #000;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .health-bar-wrap {
+            width: 100%;
+            height: 24px;
+            background: rgba(10,10,10,0.9);
+            border: 2px solid #333;
+            border-radius: 2px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+            transform: skewX(-15deg);
+            overflow: hidden;
+        }
+        .health-fill {
+            height: 100%;
+            transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+        .health-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shine 3s infinite;
+        }
+        @@keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+
+        .health-fill.player {
+            background: linear-gradient(90deg, #00C853, #64DD17);
+            box-shadow: 0 0 20px rgba(0,200,83,0.6);
+        }
+        .health-fill.enemy {
+            background: linear-gradient(90deg, #D50000, #FF1744);
+            box-shadow: 0 0 20px rgba(213,0,0,0.6);
+        }
+        .health-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.9em;
+            color: #FFF;
+            text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 0 0 5px #000;
+            transform: skewX(15deg); /* Correct text skew */
+            letter-spacing: 1px;
+        }
+
+        /* ── CINEMATIC BATTLE LOG ── */
+        .log-mini {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            width: 100%;
+            pointer-events: none;
+        }
+        .log-text {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2em;
+            font-weight: 900;
+            color: #FFF;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px #000, 0 0 10px #FFD700;
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .log-text.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* ── KEYBOARD CONTROLS HUD ── */
+        .controls-hud {
+            position: fixed;
+            bottom: 40px;
+            left: 0; right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10;
+            pointer-events: none; /* Strictly no mouse */
+        }
+        .skill-box {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9), rgba(10,10,10,0.9));
+            border: 1px solid #444;
+            border-bottom: 4px solid #222;
+            border-radius: 4px;
+            padding: 15px 25px;
+            text-align: center;
+            min-width: 140px;
+            position: relative;
+            transition: all 0.15s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .skill-box.active {
+            border-color: #FFF;
+            border-bottom-width: 1px;
+            transform: translateY(3px);
+            box-shadow: 0 0 25px rgba(255,255,255,0.4);
+            background: linear-gradient(180deg, rgba(60,60,60,0.9), rgba(20,20,20,0.9));
+        }
+        .skill-box.locked {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        .skill-box.locked::after {
+            content: '🔒 REQ LVL ' attr(data-req);
+            position: absolute;
+            top: -15px; right: -10px;
+            background: #D50000;
+            color: #FFF;
+            font-size: 0.7em;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            font-family: 'Inter', sans-serif;
+        }
+        .skill-key {
+            display: inline-block;
+            font-size: 1.6em;
+            font-weight: 900;
+            color: #FFF;
+            margin-bottom: 5px;
+            font-family: 'Cinzel', serif;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        .skill-name {
+            display: block;
+            font-size: 0.85em;
+            color: #AAA;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+        .skill-box.on-cooldown .skill-name {
+            color: #FF1744;
+        }
+
+        .mouse-warning {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FF1744;
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 1.2em;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border: 2px solid #FF1744;
+            border-radius: 5px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* ── RESULT MODAL ── */
+        .result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .result-overlay.show { display: flex; }
+        .result-box {
+            text-align: center;
+            padding: 60px 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: radial-gradient(circle at top, #222, #000);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .result-title {
+            font-family: 'Cinzel', serif;
+            font-size: 5em;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: 10px;
+        }
+        .victory .result-title { 
+            color: #FFD700; 
+            text-shadow: 0 0 30px rgba(255,215,0,0.6); 
+        }
+        .defeat .result-title { 
+            color: #D50000; 
+            text-shadow: 0 0 30px rgba(213,0,0,0.6); 
+        }
+        .hint-text {
+            color: #FFF;
+            margin-top: 40px;
+            font-size: 1em;
+            letter-spacing: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        @@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="post-processing"></div>
+    <canvas id="battleCanvas"></canvas>
+
+    <div class="mouse-warning" id="mouseWarning">🖱️ MOUSE DISABLED - USE KEYBOARD TO FIGHT</div>
+
+    <div class="hud">
+        <div class="fighter-info player">
+            <div class="name-row">
+                <div class="level-badge" id="playerLevel">LVL 1</div>
+                <div class="fighter-name player" id="playerName">Hero</div>
+            </div>
+            <div class="health-bar-wrap">
+                <div id="playerHealthFill" class="health-fill player" style="width:100%"></div>
+                <div class="health-text"><span id="playerHealthText">100 / 100</span></div>
+            </div>
+        </div>
+        <div class="fighter-info enemy">
+            <div class="name-row">
+                <div class="fighter-name enemy" id="enemyName">Monster</div>
+                <div class="level-badge" id="enemyLevel">LVL 1</div>
+            </div>
+            <div class="health-bar-wrap">
+                <div id="enemyHealthFill" class="health-fill enemy" style="width:100%"></div>
+                <div class="health-text"><span id="enemyHealthText">100 / 100</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-mini">
+        <div class="log-text" id="logText">BATTLE INITIATED</div>
+    </div>
+
+    <!-- Keyboard Hints ONLY (No onclick events) -->
+    <div class="controls-hud" id="controlsHud">
+        <div class="skill-box" id="skill1">
+            <span class="skill-key">1</span>
+            <span class="skill-name">Swift Strike</span>
+        </div>
+        <div class="skill-box locked" id="skill2" data-req="3">
+            <span class="skill-key">2</span>
+            <span class="skill-name">Heavy Smash</span>
+        </div>
+        <div class="skill-box locked" id="skill3" data-req="5">
+            <span class="skill-key">3</span>
+            <span class="skill-name">Arcane Burst</span>
+        </div>
+        <div class="skill-box" id="skill4">
+            <span class="skill-key">4</span>
+            <span class="skill-name">Guard</span>
+        </div>
+        <div class="skill-box locked" id="skill5" data-req="4">
+            <span class="skill-key">5</span>
+            <span class="skill-name">Divine Heal</span>
+        </div>
+        <div class="skill-box" id="skillEsc">
+            <span class="skill-key">ESC</span>
+            <span class="skill-name">Retreat</span>
+        </div>
+    </div>
+
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-box" id="resultBox">
+            <div class="result-title" id="resultTitle">VICTORY</div>
+            <div style="color:#AAA; font-size:1.2em; font-family:'Inter', sans-serif;" id="resultStats"></div>
+            <div class="hint-text">PRESS ENTER TO RETURN</div>
+        </div>
+    </div>
+
+<script>
+// Prevent mouse completely
+window.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const warn = document.getElementById('mouseWarning');
+    warn.style.opacity = '1';
+    setTimeout(() => warn.style.opacity = '0', 2000);
+});
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+const ENEMY_ID = @Html.Raw(Json.Serialize(enemyId));
+const LEVEL_ID = @Html.Raw(Json.Serialize(levelId));
+
+const canvas = document.getElementById('battleCanvas');
+const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency
+let w, h;
+
+let gameState = {
+    playerHP: 100, playerMaxHP: 100, playerAtk: 20, playerDef: 10,
+    playerName: 'Hero', playerLevel: 1,
+    enemyHP: 100, enemyMaxHP: 100, enemyAtk: 15, enemyDef: 8,
+    enemyName: 'Monster', enemyLevel: 1, enemyIsBoss: false,
+    isPlayerTurn: true, isAnimating: false, battleOver: false,
+    turnCount: 0, totalDmgDealt: 0, totalDmgTaken: 0,
+    defending: false, magicCooldown: 0, healCooldown: 0
+};
+
+let frame = 0;
+let camera = { x: 0, y: 0, zoom: 1 };
+let shake = { x: 0, y: 0, intensity: 0 };
+let effects = { flash: 0, flashColor: '#FFF', timeSlow: 1 };
+
+let particles = [];
+let damageTexts = [];
+let vfxTrails = [];
+let fogLayers = [];
+
+let pAnim = { state: 'idle', t: 0, x: 0, y: 0, sclX: 1, sclY: 1 };
+let eAnim = { state: 'idle', t: 0, x: 0, y: 0, sclX: 1, sclY: 1 };
+
+function resize() { 
+    w = canvas.width = window.innerWidth; 
+    h = canvas.height = window.innerHeight; 
+    initFog();
+}
+window.addEventListener('resize', resize);
+
+// ── REALISTIC VISUAL SYSTEMS ── //
+
+const colors = {
+    ambient: ['#040B16', '#100B16', '#1A0B0B', '#0A1510'],
+    light: ['#29B6F6', '#AB47BC', '#EF5350', '#66BB6A']
+};
+const themeIdx = (LEVEL_ID % 4);
+
+function initFog() {
+    fogLayers = [];
+    for(let i=0; i<3; i++) {
+        fogLayers.push({
+            y: h * (0.6 + i*0.1),
+            speed: 0.5 + i*0.3,
+            offset: Math.random() * 1000,
+            opacity: 0.15 + i*0.05
+        });
+    }
+}
+
+function drawAtmosphere() {
+    // Deep realistic background gradient
+    const sky = ctx.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0, '#000');
+    sky.addColorStop(0.4, colors.ambient[themeIdx]);
+    sky.addColorStop(1, '#000');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,w,h);
+
+    // Volumetric Light beam from top
+    ctx.globalCompositeOperation = 'screen';
+    const beam = ctx.createLinearGradient(w/2, 0, w/2, h);
+    beam.addColorStop(0, `rgba(255,255,255,0.05)`);
+    beam.addColorStop(0.5, `${colors.light[themeIdx]}11`);
+    beam.addColorStop(1, 'transparent');
+    
+    ctx.save();
+    ctx.translate(w/2, 0);
+    ctx.rotate(Math.sin(frame*0.01)*0.05);
+    ctx.fillStyle = beam;
+    ctx.beginPath(); ctx.moveTo(-w*0.3, 0); ctx.lineTo(w*0.3, 0); ctx.lineTo(w*0.8, h); ctx.lineTo(-w*0.8, h); ctx.fill();
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Ground Floor with perspective grid fade
+    const gy = h * 0.7;
+    const floor = ctx.createLinearGradient(0, gy, 0, h);
+    floor.addColorStop(0, '#050505');
+    floor.addColorStop(0.1, '#111');
+    floor.addColorStop(1, '#000');
+    ctx.fillStyle = floor; ctx.fillRect(0,gy,w,h-gy);
+    
+    // Horizon line glow
+    ctx.shadowBlur = 20; ctx.shadowColor = colors.light[themeIdx];
+    ctx.strokeStyle = `rgba(255,255,255,0.1)`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Moving Fog
+    ctx.fillStyle = colors.light[themeIdx];
+    fogLayers.forEach(f => {
+        f.offset += f.speed;
+        ctx.globalAlpha = f.opacity * (0.5 + Math.sin(frame*0.05)*0.2);
+        ctx.beginPath();
+        for(let x=0; x<=w; x+=50) {
+            let yy = f.y + Math.sin((x + f.offset)*0.01) * 30 + Math.cos((x + f.offset)*0.02) * 20;
+            if(x===0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+        }
+        ctx.lineTo(w,h); ctx.lineTo(0,h);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
+
+// Highly detailed procedural character drawing using gradients and complex paths
+function drawHero(x, y, anim) {
+    const s = h * 0.18 * anim.sclY;
+    const sx = anim.sclX;
+    const breathe = Math.sin(frame*0.04)* (s*0.02);
+    
+    ctx.save();
+    ctx.translate(x + anim.x, y + anim.y);
+    ctx.scale(sx, 1); // For facing direction
+
+    // Drop Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.beginPath(); ctx.ellipse(0, s*1.05, s*0.6, s*0.08, 0, 0, Math.PI*2); ctx.fill();
+
+    // Body Dynamics
+    let lean = 0, armAngle = 0, weaponAngle = -0.5, shieldAngle = 0;
+    if(anim.state === 'attack') { lean = 0.4; armAngle = 1.5; weaponAngle = 2.0; }
+    if(anim.state === 'heavy') { lean = 0.6; armAngle = 2.5; weaponAngle = 3.0; }
+    if(anim.state === 'magic') { lean = -0.2; armAngle = -2.5; weaponAngle = -1.0; }
+    if(anim.state === 'defend') { lean = -0.1; shieldAngle = 0.5; armAngle = -0.5; }
+    if(anim.state === 'hit') { lean = -0.4; }
+
+    ctx.rotate(lean);
+
+    // Armor Metallic Material
+    const armorDark = ctx.createLinearGradient(-s*0.2, 0, s*0.2, s*0.6);
+    armorDark.addColorStop(0, '#1A237E'); armorDark.addColorStop(0.5, '#37474F'); armorDark.addColorStop(1, '#000');
+    
+    const armorLight = ctx.createLinearGradient(-s*0.2, 0, s*0.2, s*0.6);
+    armorLight.addColorStop(0, '#5C6BC0'); armorLight.addColorStop(0.5, '#90A4AE'); armorLight.addColorStop(1, '#263238');
+
+    // Back Leg
+    ctx.fillStyle = armorDark;
+    ctx.beginPath(); ctx.moveTo(-s*0.1, s*0.4); ctx.lineTo(-s*0.25, s*0.8); ctx.lineTo(-s*0.15, s*1); ctx.lineTo(-s*0.05, s*0.8); ctx.fill();
+    
+    // Front Leg
+    ctx.fillStyle = armorLight;
+    ctx.beginPath(); ctx.moveTo(s*0.1, s*0.4); ctx.lineTo(s*0.25, s*0.8); ctx.lineTo(s*0.35, s*1); ctx.lineTo(s*0.15, s*0.8); ctx.fill();
+
+    // Glowing Cape
+    ctx.fillStyle = 'rgba(183, 28, 28, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(-s*0.2, -s*0.2);
+    let capeEnd = -s*0.5 + Math.sin(frame*0.05)*s*0.2;
+    ctx.quadraticCurveTo(-s*0.8, s*0.2, capeEnd, s*0.9);
+    ctx.lineTo(-s*0.2, s*0.4);
+    ctx.fill();
+
+    // Torso Heavy Plate
+    ctx.fillStyle = armorLight;
+    ctx.beginPath();
+    ctx.moveTo(-s*0.25, -s*0.2 - breathe);
+    ctx.lineTo(s*0.2, -s*0.25 - breathe);
+    ctx.quadraticCurveTo(s*0.3, s*0.1, s*0.15, s*0.5);
+    ctx.lineTo(-s*0.15, s*0.4);
+    ctx.fill();
+
+    // Chest glowing rune
+    ctx.shadowBlur = 15; ctx.shadowColor = '#00E5FF';
+    ctx.strokeStyle = '#00E5FF'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, -s*0.1); ctx.lineTo(s*0.1, s*0.1); ctx.lineTo(-s*0.05, s*0.2); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Shield Arm (Back)
+    ctx.save(); ctx.translate(-s*0.1, -s*0.1 - breathe); ctx.rotate(shieldAngle);
+    const shieldGrad = ctx.createRadialGradient(0, s*0.3, 0, 0, s*0.3, s*0.4);
+    shieldGrad.addColorStop(0, '#FFD700'); shieldGrad.addColorStop(0.5, '#F57F17'); shieldGrad.addColorStop(1, '#3E2723');
+    ctx.fillStyle = shieldGrad;
+    ctx.beginPath(); ctx.ellipse(-s*0.1, s*0.3, s*0.15, s*0.4, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Head / Helmet
+    ctx.save(); ctx.translate(0, -s*0.3 - breathe);
+    ctx.fillStyle = armorDark;
+    ctx.beginPath(); ctx.arc(0, -s*0.1, s*0.2, 0, Math.PI*2); ctx.fill(); // base head
+    // Plume
+    ctx.fillStyle = '#D50000';
+    ctx.beginPath(); ctx.moveTo(0, -s*0.3); ctx.quadraticCurveTo(-s*0.3, -s*0.4, -s*0.4 + Math.sin(frame*0.1)*10, -s*0.1); ctx.fill();
+    // Visor glow
+    ctx.shadowBlur = 10; ctx.shadowColor = '#00E5FF'; ctx.fillStyle = '#E0F7FA';
+    ctx.fillRect(s*0.05, -s*0.15, s*0.1, s*0.03);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Weapon Arm (Front)
+    ctx.save(); ctx.translate(s*0.1, -s*0.1 - breathe); ctx.rotate(armAngle);
+    ctx.fillStyle = armorLight;
+    ctx.beginPath(); ctx.ellipse(0, s*0.15, s*0.08, s*0.2, 0, 0, Math.PI*2); ctx.fill(); // shoulder pad
+    
+    // Greatsword
+    ctx.save(); ctx.translate(0, s*0.3); ctx.rotate(weaponAngle);
+    ctx.shadowBlur = anim.state==='magic' ? 20 : 0; ctx.shadowColor = '#E040FB';
+    const swordGrad = ctx.createLinearGradient(0, 0, 0, -s*1.2);
+    swordGrad.addColorStop(0, '#FFF'); swordGrad.addColorStop(0.5, '#B0BEC5'); swordGrad.addColorStop(1, '#ECEFF1');
+    ctx.fillStyle = swordGrad;
+    ctx.beginPath(); ctx.moveTo(-s*0.05, 0); ctx.lineTo(s*0.05, 0); ctx.lineTo(s*0.02, -s*1.2); ctx.lineTo(0, -s*1.4); ctx.lineTo(-s*0.02, -s*1.2); ctx.fill();
+    
+    // Sword trail VFX
+    if (anim.state==='attack' && anim.t>5 && anim.t<15) {
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath(); ctx.arc(0, 0, s*1.4, -Math.PI, 0); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.restore();
+    ctx.restore();
+
+    ctx.restore();
+}
+
+function drawBeast(x, y, anim) {
+    const s = h * 0.2 * anim.sclY;
+    const sx = -anim.sclX; // Face left by default
+    const hover = Math.sin(frame*0.05)* (s*0.05);
+    
+    ctx.save();
+    ctx.translate(x + anim.x, y + anim.y + hover);
+    ctx.scale(sx, 1);
+
+    // Drop Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.beginPath(); ctx.ellipse(0, s*1.05, s*0.7, s*0.1, 0, 0, Math.PI*2); ctx.fill();
+
+    let lean = 0.2, armAngle = 0, headAngle = 0;
+    if(anim.state === 'attack') { lean = 0.6; armAngle = 1.5; headAngle = 0.5; }
+    if(anim.state === 'heavy') { lean = 0.8; armAngle = 2.5; headAngle = -0.5; }
+    if(anim.state === 'hit') { lean = -0.2; headAngle = -0.4; }
+
+    ctx.rotate(lean);
+
+    // Fleshy monstrous gradients
+    const skinDark = ctx.createRadialGradient(0,0,0,0,0,s);
+    skinDark.addColorStop(0, '#3E2723'); skinDark.addColorStop(1, '#000');
+    
+    const skinLight = ctx.createLinearGradient(-s*0.3, -s*0.3, s*0.3, s*0.5);
+    skinLight.addColorStop(0, '#4E342E'); skinLight.addColorStop(1, '#1B0000');
+
+    // Tendrils / Tails
+    ctx.strokeStyle = '#D50000'; ctx.lineWidth = s*0.05; ctx.lineCap='round';
+    for(let i=0; i<3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.2, s*0.2);
+        let tx = -s*1.2 + Math.cos(frame*0.1+i)*s*0.3;
+        let ty = s*0.8 + Math.sin(frame*0.08+i)*s*0.4;
+        ctx.quadraticCurveTo(-s*0.8, s*0.2, tx, ty);
+        ctx.stroke();
+    }
+
+    // Legs
+    ctx.fillStyle = skinDark;
+    ctx.beginPath(); ctx.ellipse(-s*0.1, s*0.6, s*0.15, s*0.4, -0.5, 0, Math.PI*2); ctx.fill(); // back
+    ctx.fillStyle = skinLight;
+    ctx.beginPath(); ctx.ellipse(s*0.2, s*0.6, s*0.18, s*0.4, 0.2, 0, Math.PI*2); ctx.fill(); // front
+
+    // Massive Torso
+    ctx.fillStyle = skinLight;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*0.4, s*0.5, 0.2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Magma Veins
+    ctx.strokeStyle = '#FF3D00'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#FF3D00';
+    ctx.beginPath(); ctx.moveTo(-s*0.2, -s*0.2); ctx.quadraticCurveTo(0, 0, s*0.2, s*0.2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-s*0.1, s*0.1); ctx.quadraticCurveTo(s*0.1, s*0.3, s*0.1, s*0.4); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Head
+    ctx.save(); ctx.translate(s*0.3, -s*0.3); ctx.rotate(headAngle);
+    ctx.fillStyle = skinDark;
+    ctx.beginPath(); ctx.moveTo(0, s*0.1); ctx.lineTo(s*0.4, -s*0.1); ctx.lineTo(s*0.3, -s*0.3); ctx.lineTo(-s*0.2, -s*0.2); ctx.fill(); // jaw/snout
+    // Glowing Eyes
+    ctx.fillStyle = '#FF1744'; ctx.shadowBlur=15; ctx.shadowColor='#FF1744';
+    ctx.beginPath(); ctx.ellipse(s*0.1, -s*0.2, s*0.08, s*0.03, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Horns
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath(); ctx.moveTo(-s*0.1, -s*0.2); ctx.quadraticCurveTo(-s*0.3, -s*0.6, -s*0.5, -s*0.7); ctx.lineTo(-s*0.2, -s*0.25); ctx.fill();
+    ctx.restore();
+
+    // Arm / Claws
+    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
+    ctx.fillStyle = skinLight;
+    ctx.beginPath(); ctx.ellipse(0, s*0.3, s*0.1, s*0.4, -0.2, 0, Math.PI*2); ctx.fill();
+    // Claws
+    ctx.fillStyle = '#FFF';
+    for(let i=0; i<3; i++) {
+        ctx.beginPath(); ctx.moveTo(-s*0.05 + i*s*0.05, s*0.6); ctx.lineTo(s*0.1 + i*s*0.1, s*1); ctx.lineTo(s*0.05 + i*s*0.05, s*0.6); ctx.fill();
+    }
+    ctx.restore();
+
+    ctx.restore();
+}
+
+// ── ADVANCED VFX ── //
+function spawnFX(x, y, color, count, speed, type='spark') {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x, y, 
+            vx: (Math.random()-0.5)*speed, 
+            vy: (Math.random()-0.8)*speed,
+            life: 1.0, color, type,
+            s: type==='magic'? 8+Math.random()*15 : 2+Math.random()*6
+        });
+    }
+}
+function spawnDmg(x, y, val, color, scale=1) {
+    damageTexts.push({ x, y, val, color, vy:-3, life:1, scl: 2*scale });
+}
+
+function updateDrawVFX() {
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x+=p.vx; p.y+=p.vy; 
+        if(p.type==='spark') { p.vy+=0.4; p.vx*=0.98; }
+        else if(p.type==='magic') { p.vy-=0.1; p.vx*=0.9; p.s*=0.95; } // floats up
+        
+        p.life-=0.02;
+        if(p.life<=0) { particles.splice(i,1); continue; }
+        
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over'; ctx.shadowBlur = 0;
+
+    for(let i=damageTexts.length-1; i>=0; i--) {
+        let d = damageTexts[i];
+        d.y += d.vy; d.vy += 0.1; d.life -= 0.015; d.scl = Math.max(1, d.scl-0.05);
+        if(d.life<=0) { damageTexts.splice(i,1); continue; }
+        
+        ctx.globalAlpha = Math.min(1, d.life*2); 
+        ctx.fillStyle = d.color;
+        ctx.font = `900 ${30 * d.scl}px 'Cinzel', serif`;
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 6; ctx.textAlign = 'center';
+        ctx.strokeText(d.val, d.x, d.y);
+        ctx.fillText(d.val, d.x, d.y);
+    }
+    ctx.globalAlpha = 1;
+}
+
+// ── CORE LOOP ── //
+function render() {
+    frame++; resize(); // Handles w/h dynamic
+    
+    // Logic updates
+    if(shake.intensity > 0.1) {
+        shake.x = (Math.random()-0.5)*shake.intensity; 
+        shake.y = (Math.random()-0.5)*shake.intensity; 
+        shake.intensity *= 0.85;
+    } else { shake.x=shake.y=0; }
+
+    if(effects.flash > 0.01) effects.flash *= 0.85; else effects.flash=0;
+
+    // Animation sequences
+    [pAnim, eAnim].forEach(a => {
+        if(a.state !== 'idle') {
+            a.t++;
+            const spd = (a.state==='heavy' || a.state==='magic') ? 2 : 1;
+            if(a.state==='attack') {
+                if(a.t<8) a.x += (a===pAnim?25:-25);
+                else if(a.t<16) a.x -= (a===pAnim?25:-25);
+                else { a.state='idle'; a.x=0; }
+            } else if(a.state==='heavy') {
+                if(a.t<15) { a.y-=10; a.sclY=1.2; a.sclX=0.8; } // jump squash
+                else if(a.t<20) { a.x+=(a===pAnim?30:-30); a.y+=30; a.sclY=0.8; a.sclX=1.2; } // smash
+                else if(a.t<35) { a.x-=(a===pAnim?15:-15); a.y-=5; a.sclY=1; a.sclX=1; } // recover
+                else { a.state='idle'; a.x=a.y=0; }
+            } else if(a.state==='magic' || a.state==='heal') {
+                a.y = Math.sin(a.t*0.5)*10; // levitate
+                if(a.t>40) { a.state='idle'; a.y=0; }
+            } else if(a.state==='hit') {
+                a.x = (Math.random()-0.5)*20;
+                if(a.t>15) { a.state='idle'; a.x=0; }
+            } else if(a.state==='defend') {
+                if(a.t>30) a.state='idle';
+            }
+        }
+    });
+
+    // DRAW
+    ctx.save();
+    ctx.translate(w/2, h/2);
+    ctx.scale(camera.zoom, camera.zoom);
+    ctx.translate(-w/2 + shake.x, -h/2 + shake.y);
+
+    drawAtmosphere();
+    
+    // Fighters
+    drawHero(w*0.3, h*0.55, pAnim);
+    drawBeast(w*0.7, h*0.55, eAnim);
+
+    updateDrawVFX();
+
+    ctx.restore();
+
+    // Post processing Screen Flash
+    if(effects.flash > 0) {
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = effects.flashColor; ctx.globalAlpha = effects.flash;
+        ctx.fillRect(0,0,w,h);
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(render);
+}
+
+// ── GAME LOGIC ── //
+function setLog(msg) {
+    const el = document.getElementById('logText');
+    el.classList.remove('show');
+    setTimeout(() => {
+        el.textContent = msg;
+        el.classList.add('show');
+    }, 100);
+}
+
+function updateHUD() {
+    document.getElementById('playerHealthFill').style.width = Math.max(0,(gameState.playerHP/gameState.playerMaxHP)*100)+'%';
+    document.getElementById('enemyHealthFill').style.width = Math.max(0,(gameState.enemyHP/gameState.enemyMaxHP)*100)+'%';
+    document.getElementById('playerHealthText').textContent = `${Math.max(0,gameState.playerHP)} / ${gameState.playerMaxHP}`;
+    document.getElementById('enemyHealthText').textContent = `${Math.max(0,gameState.enemyHP)} / ${gameState.enemyMaxHP}`;
+    
+    const upd = (id, req, cd) => {
+        const el = document.getElementById(id);
+        if(gameState.playerLevel < req) { el.className = 'skill-box locked'; return; }
+        el.className = cd > 0 ? 'skill-box on-cooldown' : 'skill-box';
+        const nameEl = el.querySelector('.skill-name');
+        if(cd > 0) nameEl.innerHTML = `WAIT ${cd}`;
+        else nameEl.innerHTML = el.dataset.name || nameEl.innerHTML;
+        if(!el.dataset.name) el.dataset.name = nameEl.innerHTML;
+    };
+    upd('skill1', 1, 0); upd('skill2', 3, 0); upd('skill3', 5, gameState.magicCooldown);
+    upd('skill4', 1, 0); upd('skill5', 4, gameState.healCooldown);
+}
+
+function triggerHit(isEnemy, dmg, type) {
+    const tx = isEnemy ? w*0.7 : w*0.3;
+    const ty = h*0.5;
+    shake.intensity = type==='heavy'?30 : type==='magic'?20 : 15;
+    effects.flash = type==='magic'?0.5 : 0.3;
+    effects.flashColor = type==='magic'?'#E040FB' : type==='heavy'?'#FFD700':'#FFF';
+    
+    spawnFX(tx, ty, effects.flashColor, type==='magic'?60:30, type==='heavy'?25:15, type==='magic'?'magic':'spark');
+    spawnDmg(tx, ty-50, `-${dmg}`, effects.flashColor, type==='heavy'?1.5:1);
+    
+    if(isEnemy) { eAnim.state='hit'; eAnim.t=0; gameState.enemyHP -= dmg; gameState.totalDmgDealt += dmg; }
+    else { pAnim.state='hit'; pAnim.t=0; gameState.playerHP -= dmg; gameState.totalDmgTaken += dmg; }
+    
+    updateHUD();
+}
+
+function calcDmg(atk, def, mult) { return Math.max(1, Math.floor((atk*mult - def*0.4) * (0.85+Math.random()*0.3))); }
+
+function endBattle(win) {
+    gameState.battleOver = true; updateHUD();
+    spawnFX(w*(win?0.7:0.3), h*0.5, win?'#00E676':'#D50000', 100, 30);
+    shake.intensity=40; effects.flash=0.8; effects.flashColor=win?'#00E676':'#D50000';
+    setLog(win ? 'ENEMY VANQUISHED' : 'YOU HAVE FALLEN');
+    
+    fetch('/api/arena/battle-result', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ enemyId: ENEMY_ID, victory: win, turnCount: gameState.turnCount, damageDealt: gameState.totalDmgDealt, damageTaken: gameState.totalDmgTaken })
+    });
+
+    setTimeout(() => {
+        document.getElementById('resultOverlay').classList.add('show');
+        document.getElementById('resultBox').className = `result-box ${win?'victory':'defeat'}`;
+        document.getElementById('resultTitle').textContent = win ? 'VICTORY' : 'DEFEAT';
+        document.getElementById('resultStats').innerHTML = `TURNS: ${gameState.turnCount} &nbsp;|&nbsp; DMG: ${gameState.totalDmgDealt}`;
+    }, 2000);
+}
+
+function enemyTurn() {
+    if(gameState.enemyHP<=0) return endBattle(true);
+    if(gameState.playerHP<=0) return endBattle(false);
+    
+    setTimeout(() => {
+        const isHvy = Math.random()>0.7 && gameState.enemyLevel>2;
+        eAnim.state = isHvy ? 'heavy' : 'attack'; eAnim.t = 0;
+        
+        setTimeout(() => {
+            const dmg = calcDmg(gameState.enemyAtk, gameState.playerDef, isHvy?1.8:1) * (gameState.defending?0.5:1);
+            triggerHit(false, dmg, isHvy?'heavy':'attack');
+            gameState.defending = false;
+            setLog(isHvy ? `BEAST USES DEVASTATING SMASH!` : `BEAST STRIKES!`);
+            
+            setTimeout(() => {
+                if(gameState.playerHP<=0) return endBattle(false);
+                if(gameState.magicCooldown>0) gameState.magicCooldown--;
+                if(gameState.healCooldown>0) gameState.healCooldown--;
+                gameState.isPlayerTurn = true; updateHUD(); setLog('YOUR TURN');
+            }, 800);
+        }, 300); // sync with anim hit frame
+    }, 1000);
+}
+
+// ── KEYBOARD CONTROLS ── //
+window.addEventListener('keydown', e => {
+    if(gameState.battleOver) { if(e.key==='Enter') window.location.href='/ArenaCanvas'; return; }
+    if(!gameState.isPlayerTurn || pAnim.state!=='idle') return;
+    
+    const k = e.key;
+    const act = (id) => {
+        const el = document.getElementById(id);
+        el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 150);
+    };
+
+    if(k==='1') {
+        act('skill1'); gameState.turnCount++; gameState.isPlayerTurn = false;
+        pAnim.state = 'attack'; pAnim.t = 0;
+        setTimeout(() => {
+            triggerHit(true, calcDmg(gameState.playerAtk, gameState.enemyDef, 1), 'attack');
+            setLog('SWIFT STRIKE LANDS!'); enemyTurn();
+        }, 200);
+    }
+    else if(k==='2') {
+        if(gameState.playerLevel<3) return setLog('LOCKED: LEVEL 3 REQUIRED');
+        act('skill2'); gameState.turnCount++; gameState.isPlayerTurn = false;
+        pAnim.state = 'heavy'; pAnim.t = 0;
+        setTimeout(() => {
+            if(Math.random()>0.2) {
+                triggerHit(true, calcDmg(gameState.playerAtk, gameState.enemyDef, 2), 'heavy');
+                setLog('CRITICAL HEAVY SMASH!');
+            } else {
+                spawnDmg(w*0.7, h*0.4, 'DODGED', '#777'); setLog('SMASH MISSED!');
+            }
+            enemyTurn();
+        }, 350);
+    }
+    else if(k==='3') {
+        if(gameState.playerLevel<5) return setLog('LOCKED: LEVEL 5 REQUIRED');
+        if(gameState.magicCooldown>0) return setLog('MAGIC ON COOLDOWN');
+        act('skill3'); gameState.turnCount++; gameState.isPlayerTurn = false;
+        gameState.magicCooldown = 3; updateHUD();
+        pAnim.state = 'magic'; pAnim.t = 0;
+        setTimeout(() => {
+            triggerHit(true, calcDmg(gameState.playerAtk, gameState.enemyDef, 1.5), 'magic');
+            setLog('ARCANE BURST UNLEASHED!'); enemyTurn();
+        }, 400);
+    }
+    else if(k==='4') {
+        act('skill4'); gameState.turnCount++; gameState.isPlayerTurn = false;
+        pAnim.state = 'defend'; pAnim.t = 0; gameState.defending = true;
+        spawnFX(w*0.3, h*0.5, '#4FC3F7', 40, 10, 'magic');
+        setLog('GUARD STANCE ACTIVE!'); setTimeout(enemyTurn, 600);
+    }
+    else if(k==='5') {
+        if(gameState.playerLevel<4) return setLog('LOCKED: LEVEL 4 REQUIRED');
+        if(gameState.healCooldown>0) return setLog('HEAL ON COOLDOWN');
+        act('skill5'); gameState.turnCount++; gameState.isPlayerTurn = false;
+        gameState.healCooldown = 4; updateHUD();
+        pAnim.state = 'heal'; pAnim.t = 0;
+        setTimeout(() => {
+            const amt = Math.floor(gameState.playerMaxHP*0.35);
+            gameState.playerHP = Math.min(gameState.playerMaxHP, gameState.playerHP + amt);
+            spawnFX(w*0.3, h*0.5, '#00E676', 50, 15, 'magic');
+            spawnDmg(w*0.3, h*0.4, `+${amt}`, '#00E676'); updateHUD();
+            setLog('DIVINE HEALING!'); setTimeout(enemyTurn, 600);
+        }, 400);
+    }
+    else if(k==='Escape') {
+        act('skillEsc'); setLog('RETREATING...');
+        setTimeout(() => window.location.href='/ArenaCanvas', 800);
+    }
+});
+
+async function init() {
+    try {
+        const [pRes, eRes] = await Promise.all([fetch('/api/arena/player-stats'), fetch(`/api/arena/enemy/${ENEMY_ID}`)]);
+        if(pRes.ok) {
+            const p = await pRes.json();
+            gameState.playerName=p.name; gameState.playerLevel=p.level;
+            gameState.playerHP=gameState.playerMaxHP=p.health; gameState.playerAtk=p.attack; gameState.playerDef=p.defense;
+            document.getElementById('playerName').textContent = p.name;
+            document.getElementById('playerLevel').textContent = 'LVL ' + p.level;
+        }
+        if(eRes.ok) {
+            const e = await eRes.json();
+            gameState.enemyName=e.name; gameState.enemyLevel=e.level; gameState.enemyIsBoss=e.isBoss;
+            gameState.enemyHP=gameState.enemyMaxHP=e.health; gameState.enemyAtk=e.attack; gameState.enemyDef=e.defense;
+            document.getElementById('enemyName').textContent = e.name;
+            document.getElementById('enemyLevel').textContent = 'LVL ' + e.level;
+        }
+    } catch(e) {}
+    updateHUD();
+    requestAnimationFrame(render);
+    setTimeout(()=>setLog('BATTLE INITIATED'), 500);
+    setTimeout(()=>setLog('YOUR TURN'), 2500);
+}
+init();
+</script>
+</body>
+</html>

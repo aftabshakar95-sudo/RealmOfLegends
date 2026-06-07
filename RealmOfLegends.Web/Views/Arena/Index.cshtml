@@ -1,0 +1,951 @@
+@{
+    ViewData["Title"] = "Arena";
+    var player = ViewBag.Player as RealmOfLegends.Core.Entities.Player;
+    var recentFights = ViewBag.RecentFights as List<RealmOfLegends.Core.Entities.FightLog>;
+}
+
+<style>
+    .arena-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .arena-header {
+        text-align: center;
+        margin-bottom: 40px;
+        background: linear-gradient(135deg, #8b0000 0%, #ff4500 100%);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(139, 0, 0, 0.5);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .arena-header::before {
+        content: '⚔️';
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        font-size: 200px;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+    }
+
+    .arena-header h1 {
+        color: #fff;
+        font-size: 3em;
+        margin: 0;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        position: relative;
+    }
+
+    .arena-subtitle {
+        color: #ffeb3b;
+        font-size: 1.3em;
+        margin-top: 10px;
+    }
+
+    .arena-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .battle-arena {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        border: 3px solid #8b0000;
+        position: relative;
+        min-height: 600px;
+    }
+
+    .battle-stage {
+        position: relative;
+        height: 500px;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        border-radius: 15px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 2px solid #444;
+    }
+
+    .battle-ground {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 80px;
+        background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+        border-top: 3px solid #444;
+    }
+
+    .fighter {
+        position: absolute;
+        bottom: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.5s ease;
+    }
+
+    .fighter.player {
+        left: 15%;
+    }
+
+    .fighter.enemy {
+        right: 15%;
+    }
+
+    .fighter-sprite {
+        font-size: 120px;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.8));
+        transition: all 0.3s ease;
+    }
+
+    .fighter.attacking .fighter-sprite {
+        animation: attack 0.6s ease;
+    }
+
+    .fighter.hit .fighter-sprite {
+        animation: hit 0.5s ease;
+    }
+
+    .fighter.defeated .fighter-sprite {
+        animation: defeat 1s ease forwards;
+        filter: grayscale(100%) opacity(0.3);
+    }
+
+    @@keyframes attack {
+        0%, 100% { transform: translateX(0) scale(1); }
+        30% { transform: translateX(50px) scale(1.2) rotate(10deg); }
+        50% { transform: translateX(50px) scale(1.2) rotate(-10deg); }
+        70% { transform: translateX(0) scale(1.1); }
+    }
+
+    @@keyframes hit {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-20px); filter: brightness(2); }
+        50% { transform: translateX(20px); }
+        75% { transform: translateX(-10px); }
+    }
+
+    @@keyframes defeat {
+        0% { transform: translateY(0) rotate(0); opacity: 1; }
+        50% { transform: translateY(-30px) rotate(180deg); }
+        100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+    }
+
+    .health-bar-container {
+        width: 200px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 10px;
+        padding: 5px;
+        border: 2px solid #333;
+    }
+
+    .fighter-name {
+        color: #fff;
+        font-size: 0.9em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .health-bar {
+        width: 100%;
+        height: 20px;
+        background: #333;
+        border-radius: 5px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .health-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff0000 0%, #ff4500 50%, #ff6600 100%);
+        transition: width 0.8s ease;
+        border-radius: 5px;
+    }
+
+    .health-fill.player-health {
+        background: linear-gradient(90deg, #00ff00 0%, #44ff44 50%, #66ff66 100%);
+    }
+
+    .health-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-size: 0.75em;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        z-index: 1;
+    }
+
+    .damage-indicator {
+        position: absolute;
+        font-size: 2em;
+        font-weight: bold;
+        color: #ff0000;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        animation: damageFloat 1s ease-out forwards;
+        pointer-events: none;
+        z-index: 100;
+    }
+
+    .damage-indicator.crit {
+        color: #ffeb3b;
+        font-size: 3em;
+        text-shadow: 0 0 10px #ff0000;
+    }
+
+    @@keyframes damageFloat {
+        0% { transform: translateY(0) scale(1); opacity: 1; }
+        50% { transform: translateY(-50px) scale(1.5); }
+        100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+    }
+
+    .battle-log {
+        background: rgba(0,0,0,0.6);
+        padding: 15px;
+        border-radius: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+        border: 2px solid #444;
+    }
+
+    .log-message {
+        color: #aaa;
+        font-size: 0.9em;
+        margin: 5px 0;
+        padding: 5px;
+        border-left: 3px solid #666;
+        padding-left: 10px;
+    }
+
+    .log-message.player-action {
+        border-left-color: #4caf50;
+        color: #a5d6a7;
+    }
+
+    .log-message.enemy-action {
+        border-left-color: #f44336;
+        color: #ef9a9a;
+    }
+
+    .log-message.critical {
+        border-left-color: #ffeb3b;
+        color: #fff59d;
+        font-weight: bold;
+    }
+
+    .battle-controls {
+        text-align: center;
+    }
+
+    .fight-button {
+        background: linear-gradient(135deg, #8b0000 0%, #ff4500 100%);
+        color: white;
+        border: none;
+        padding: 20px 60px;
+        font-size: 1.5em;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 5px 20px rgba(255, 69, 0, 0.5);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .fight-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(255, 69, 0, 0.7);
+    }
+
+    .fight-button:active {
+        transform: translateY(0);
+    }
+
+    .fight-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .progress-panel {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        border: 3px solid #8b0000;
+    }
+
+    .progress-title {
+        color: #ff4500;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        margin: 10px 0;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        border-left: 4px solid #ff4500;
+    }
+
+    .stat-label {
+        color: #aaa;
+        font-size: 1.1em;
+    }
+
+    .stat-value {
+        color: #ffeb3b;
+        font-size: 1.3em;
+        font-weight: bold;
+    }
+
+    .arena-levels {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .level-badge {
+        padding: 15px;
+        text-align: center;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 1.1em;
+        transition: all 0.3s ease;
+    }
+
+    .level-badge.completed {
+        background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+        color: white;
+        box-shadow: 0 3px 10px rgba(76, 175, 80, 0.5);
+    }
+
+    .level-badge.current {
+        background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+        color: white;
+        box-shadow: 0 3px 10px rgba(255, 152, 0, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    .level-badge.locked {
+        background: rgba(255, 255, 255, 0.05);
+        color: #666;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .fight-log {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        border: 3px solid #8b0000;
+        margin-top: 30px;
+    }
+
+    .log-title {
+        color: #ff4500;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .log-entry {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .log-entry:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateX(5px);
+    }
+
+    .log-entry.victory {
+        border-left: 4px solid #4caf50;
+    }
+
+    .log-entry.defeat {
+        border-left: 4px solid #f44336;
+    }
+
+    .log-outcome {
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+
+    .log-outcome.victory {
+        color: #4caf50;
+    }
+
+    .log-outcome.defeat {
+        color: #f44336;
+    }
+
+    .log-details {
+        color: #aaa;
+        font-size: 0.9em;
+    }
+
+    .log-rewards {
+        color: #ffeb3b;
+        font-weight: bold;
+    }
+
+    .battle-result {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        border: 3px solid #ff4500;
+        z-index: 1000;
+        min-width: 400px;
+        text-align: center;
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .battle-result.show {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    .result-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+    }
+
+    .result-title {
+        font-size: 2.5em;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .result-title.victory {
+        color: #4caf50;
+    }
+
+    .result-title.defeat {
+        color: #f44336;
+    }
+
+    .result-details {
+        font-size: 1.2em;
+        color: #aaa;
+        margin: 10px 0;
+    }
+
+    .result-rewards {
+        background: rgba(255, 235, 59, 0.1);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border: 2px solid #ffeb3b;
+    }
+
+    .reward-item {
+        color: #ffeb3b;
+        font-size: 1.3em;
+        margin: 10px 0;
+        font-weight: bold;
+    }
+
+    .close-result {
+        background: linear-gradient(135deg, #8b0000 0%, #ff4500 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.2em;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .close-result:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(255, 69, 0, 0.5);
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .overlay.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    @@media (max-width: 768px) {
+        .arena-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .arena-levels {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .battle-result {
+            min-width: 90%;
+            padding: 30px 20px;
+        }
+    }
+</style>
+
+<div class="arena-container">
+    <div class="arena-header">
+        <h1>⚔️ Battle Arena ⚔️</h1>
+        <div class="arena-subtitle">Prove your strength in combat!</div>
+    </div>
+
+    <div class="arena-grid">
+        <div class="battle-arena">
+            <div class="battle-stage" id="battleStage">
+                <!-- Battle Ground -->
+                <div class="battle-ground"></div>
+                
+                <!-- Player Fighter -->
+                <div class="fighter player" id="playerFighter">
+                    <div class="health-bar-container">
+                        <div class="fighter-name">@player.CharacterName</div>
+                        <div class="health-bar">
+                            <div class="health-fill player-health" id="playerHealthBar" style="width: 100%"></div>
+                            <div class="health-text" id="playerHealthText">@player.HP / @player.MaxHP</div>
+                        </div>
+                    </div>
+                    <div class="fighter-sprite" id="playerSprite">
+                        @switch (player.Class)
+                        {
+                            case "Warrior": @:🗡️
+                                break;
+                            case "Mage": @:🧙
+                                break;
+                            case "Rogue": @:🥷
+                                break;
+                            case "Paladin": @:⚔️
+                                break;
+                            default: @:🗡️
+                                break;
+                        }
+                    </div>
+                </div>
+                
+                <!-- Enemy Fighter -->
+                <div class="fighter enemy" id="enemyFighter">
+                    <div class="health-bar-container">
+                        <div class="fighter-name" id="enemyNameDisplay">Loading...</div>
+                        <div class="health-bar">
+                            <div class="health-fill" id="enemyHealthBar" style="width: 100%"></div>
+                            <div class="health-text" id="enemyHealthText">??? / ???</div>
+                        </div>
+                    </div>
+                    <div class="fighter-sprite" id="enemySprite">👹</div>
+                </div>
+            </div>
+
+            <div class="battle-log" id="battleLog">
+                <div class="log-message">⚔️ Prepare for battle!</div>
+            </div>
+
+            <div class="battle-controls">
+                <button class="fight-button" id="fightButton" onclick="startBattle()">
+                    ⚔️ START BATTLE! ⚔️
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-panel">
+            <h2 class="progress-title">Your Progress</h2>
+            
+            <div class="stat-item">
+                <span class="stat-label">Current Arena Level</span>
+                <span class="stat-value" id="currentLevel">@player.ArenaProgress.CurrentLevel</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Highest Level Reached</span>
+                <span class="stat-value">@player.ArenaProgress.HighestLevel</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Total Wins</span>
+                <span class="stat-value" id="totalWins">@player.ArenaProgress.TotalWins</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Total Losses</span>
+                <span class="stat-value" id="totalLosses">@player.ArenaProgress.TotalLosses</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Win Rate</span>
+                <span class="stat-value">
+                    @{
+                        var totalFights = player.ArenaProgress.TotalWins + player.ArenaProgress.TotalLosses;
+                        var winRate = totalFights > 0 ? (player.ArenaProgress.TotalWins * 100.0 / totalFights).ToString("F1") : "0.0";
+                    }
+                    @winRate%
+                </span>
+            </div>
+
+            <h3 style="color: #ff4500; text-align: center; margin: 30px 0 10px;">Arena Levels</h3>
+            <div class="arena-levels" id="arenaLevels">
+                @for (int i = 1; i <= 10; i++)
+                {
+                    var badgeClass = i < player.ArenaProgress.CurrentLevel ? "completed" : 
+                                   i == player.ArenaProgress.CurrentLevel ? "current" : "locked";
+                    <div class="level-badge @badgeClass">@i</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="fight-log">
+        <h2 class="log-title">Recent Battle History</h2>
+        <div id="fightHistory">
+            @if (recentFights != null && recentFights.Any())
+            {
+                @foreach (var fight in recentFights)
+                {
+                    <div class="log-entry @fight.Outcome.ToLower()">
+                        <div>
+                            <span class="log-outcome @fight.Outcome.ToLower()">
+                                @(fight.Outcome == "Victory" ? "✅" : "❌") @fight.Outcome
+                            </span>
+                            <div class="log-details">
+                                Level @fight.Level • @fight.FoughtAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                            </div>
+                        </div>
+                        <div class="log-rewards">
+                            +@fight.XPEarned XP • +@fight.GoldEarned 💰
+                            @if (fight.DroppedItem != null)
+                            {
+                                <br /><span>🎁</span> @fight.DroppedItem.Name
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; color: #666; padding: 40px;">
+                    No battles yet. Start your first fight!
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="battle-result" id="battleResult">
+    <div class="result-icon" id="resultIcon">⚔️</div>
+    <div class="result-title" id="resultTitle">Battle Result</div>
+    <div class="result-details" id="resultEnemy"></div>
+    <div class="result-rewards" id="resultRewards"></div>
+    <button class="close-result" onclick="closeResult()">Continue</button>
+</div>
+
+<script>
+    let currentArenaLevel = @player.ArenaProgress.CurrentLevel;
+    let battleInProgress = false;
+    let playerHP = @player.HP;
+    let playerMaxHP = @player.MaxHP;
+    let enemyHP = 0;
+    let enemyMaxHP = 0;
+    let playerAttack = @player.AttackPower;
+    let enemyAttack = 0;
+    
+    const enemyData = {
+        1: { name: 'Goblin Scout', icon: '👺', hp: 80, attack: 15 },
+        2: { name: 'Wild Wolf', icon: '🐺', hp: 120, attack: 22 },
+        3: { name: 'Orc Warrior', icon: '👹', hp: 180, attack: 30 },
+        4: { name: 'Dark Mage', icon: '🧙', hp: 150, attack: 38 },
+        5: { name: 'Stone Golem', icon: '🗿', hp: 250, attack: 28 },
+        6: { name: 'Vampire Lord', icon: '🧛', hp: 200, attack: 45 },
+        7: { name: 'Fire Elemental', icon: '🔥', hp: 220, attack: 52 },
+        8: { name: 'Shadow Assassin', icon: '🥷', hp: 180, attack: 60 },
+        9: { name: 'Frost Giant', icon: '❄️', hp: 350, attack: 55 },
+        10: { name: 'Ancient Dragon', icon: '🐉', hp: 500, attack: 70 }
+    };
+
+    function updateEnemyDisplay() {
+        const enemy = enemyData[currentArenaLevel] || { name: 'Unknown Enemy', icon: '👹', hp: 100, attack: 20 };
+        enemyMaxHP = enemy.hp + (currentArenaLevel * 20);
+        enemyHP = enemyMaxHP;
+        enemyAttack = enemy.attack + (currentArenaLevel * 5);
+        
+        document.getElementById('enemySprite').textContent = enemy.icon;
+        document.getElementById('enemyNameDisplay').textContent = enemy.name;
+        document.getElementById('enemyHealthText').textContent = `${enemyHP} / ${enemyMaxHP}`;
+        document.getElementById('enemyHealthBar').style.width = '100%';
+    }
+
+    updateEnemyDisplay();
+
+    function addLog(message, type = '') {
+        const log = document.getElementById('battleLog');
+        const logMessage = document.createElement('div');
+        logMessage.className = `log-message ${type}`;
+        logMessage.textContent = message;
+        log.appendChild(logMessage);
+        log.scrollTop = log.scrollHeight;
+        
+        // Keep only last 10 messages
+        while (log.children.length > 10) {
+            log.removeChild(log.firstChild);
+        }
+    }
+
+    function showDamage(damage, x, y, isCrit = false) {
+        const indicator = document.createElement('div');
+        indicator.className = `damage-indicator ${isCrit ? 'crit' : ''}`;
+        indicator.textContent = `-${damage}${isCrit ? ' CRIT!' : ''}`;
+        indicator.style.left = x + 'px';
+        indicator.style.top = y + 'px';
+        
+        document.getElementById('battleStage').appendChild(indicator);
+        
+        setTimeout(() => {
+            indicator.remove();
+        }, 1000);
+    }
+
+    function updateHealthBar(isPlayer, currentHP, maxHP) {
+        const percentage = Math.max(0, (currentHP / maxHP) * 100);
+        
+        if (isPlayer) {
+            document.getElementById('playerHealthBar').style.width = percentage + '%';
+            document.getElementById('playerHealthText').textContent = `${Math.max(0, currentHP)} / ${maxHP}`;
+        } else {
+            document.getElementById('enemyHealthBar').style.width = percentage + '%';
+            document.getElementById('enemyHealthText').textContent = `${Math.max(0, currentHP)} / ${maxHP}`;
+        }
+    }
+
+    async function playAttack(attacker, defender, damage, isCrit) {
+        const attackerEl = document.getElementById(attacker + 'Fighter');
+        const defenderEl = document.getElementById(defender + 'Fighter');
+        
+        // Attack animation
+        attackerEl.classList.add('attacking');
+        
+        await sleep(300);
+        
+        // Hit animation
+        defenderEl.classList.add('hit');
+        
+        // Show damage
+        const rect = defenderEl.getBoundingClientRect();
+        const stageRect = document.getElementById('battleStage').getBoundingClientRect();
+        showDamage(damage, rect.left - stageRect.left + 50, rect.top - stageRect.top + 50, isCrit);
+        
+        await sleep(500);
+        
+        attackerEl.classList.remove('attacking');
+        defenderEl.classList.remove('hit');
+        
+        await sleep(200);
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function simulateBattle() {
+        battleInProgress = true;
+        const button = document.getElementById('fightButton');
+        button.disabled = true;
+        button.textContent = '⚔️ BATTLE IN PROGRESS... ⚔️';
+        
+        // Reset HP
+        playerHP = playerMaxHP;
+        enemyHP = enemyMaxHP;
+        
+        document.getElementById('playerFighter').classList.remove('defeated');
+        document.getElementById('enemyFighter').classList.remove('defeated');
+        
+        addLog('⚔️ Battle begins!', '');
+        await sleep(1000);
+        
+        let turn = 1;
+        let playerWon = false;
+        
+        // Battle loop - turn based
+        while (playerHP > 0 && enemyHP > 0 && turn <= 20) {
+            // Player turn
+            const playerDamage = Math.floor(playerAttack * (0.8 + Math.random() * 0.4));
+            const playerCrit = Math.random() < 0.15;
+            const finalPlayerDamage = playerCrit ? Math.floor(playerDamage * 1.8) : playerDamage;
+            
+            addLog(`⚔️ You attack for ${finalPlayerDamage} damage!${playerCrit ? ' CRITICAL HIT!' : ''}`, 'player-action' + (playerCrit ? ' critical' : ''));
+            await playAttack('player', 'enemy', finalPlayerDamage, playerCrit);
+            
+            enemyHP -= finalPlayerDamage;
+            updateHealthBar(false, enemyHP, enemyMaxHP);
+            
+            if (enemyHP <= 0) {
+                playerWon = true;
+                break;
+            }
+            
+            await sleep(800);
+            
+            // Enemy turn
+            const enemyDamage = Math.floor(enemyAttack * (0.7 + Math.random() * 0.5));
+            const enemyCrit = Math.random() < 0.1;
+            const finalEnemyDamage = enemyCrit ? Math.floor(enemyDamage * 2) : enemyDamage;
+            
+            const enemy = enemyData[currentArenaLevel];
+            addLog(`💀 ${enemy.name} attacks for ${finalEnemyDamage} damage!${enemyCrit ? ' CRITICAL HIT!' : ''}`, 'enemy-action' + (enemyCrit ? ' critical' : ''));
+            await playAttack('enemy', 'player', finalEnemyDamage, enemyCrit);
+            
+            playerHP -= finalEnemyDamage;
+            updateHealthBar(true, playerHP, playerMaxHP);
+            
+            if (playerHP <= 0) {
+                playerWon = false;
+                break;
+            }
+            
+            await sleep(800);
+            turn++;
+        }
+        
+        // Battle end
+        await sleep(500);
+        
+        if (playerWon) {
+            document.getElementById('enemyFighter').classList.add('defeated');
+            addLog('🏆 Victory! Enemy defeated!', 'player-action');
+        } else {
+            document.getElementById('playerFighter').classList.add('defeated');
+            addLog('💀 Defeat! You were defeated...', 'enemy-action');
+        }
+        
+        await sleep(1500);
+        
+        // Send result to server
+        try {
+            const response = await fetch('@Url.Action("Fight", "Arena")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showBattleResult(result);
+                currentArenaLevel = result.newLevel;
+                updateEnemyDisplay();
+                updateProgressDisplay(result);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during the battle');
+        }
+        
+        battleInProgress = false;
+        button.disabled = false;
+        button.textContent = '⚔️ START BATTLE! ⚔️';
+    }
+
+    async function startBattle() {
+        if (battleInProgress) return;
+        
+        // Clear log
+        document.getElementById('battleLog').innerHTML = '';
+        
+        // Reset visuals
+        playerHP = playerMaxHP;
+        updateHealthBar(true, playerHP, playerMaxHP);
+        updateEnemyDisplay();
+        
+        await simulateBattle();
+    }
+
+    function showBattleResult(result) {
+        const overlay = document.getElementById('overlay');
+        const resultDiv = document.getElementById('battleResult');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultEnemy = document.getElementById('resultEnemy');
+        const resultRewards = document.getElementById('resultRewards');
+
+        if (result.victory) {
+            resultIcon.textContent = '🏆';
+            resultTitle.textContent = 'VICTORY!';
+            resultTitle.className = 'result-title victory';
+            resultEnemy.textContent = `You defeated ${result.enemyName}!`;
+        } else {
+            resultIcon.textContent = '💀';
+            resultTitle.textContent = 'DEFEAT';
+            resultTitle.className = 'result-title defeat';
+            resultEnemy.textContent = `You were defeated by ${result.enemyName}`;
+        }
+
+        let rewardsHtml = `<div class="reward-item">+${result.xpEarned} XP</div>`;
+        rewardsHtml += `<div class="reward-item">+${result.goldEarned} 💰 Gold</div>`;
+        
+        if (result.droppedItem) {
+            rewardsHtml += `<div class="reward-item">🎁 ${result.droppedItem}</div>`;
+        }
+
+        resultRewards.innerHTML = rewardsHtml;
+
+        overlay.classList.add('show');
+        resultDiv.classList.add('show');
+    }
+
+    function closeResult() {
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('battleResult').classList.remove('show');
+        location.reload();
+    }
+
+    function updateProgressDisplay(result) {
+        document.getElementById('currentLevel').textContent = result.newLevel;
+        document.getElementById('totalWins').textContent = result.totalWins;
+        document.getElementById('totalLosses').textContent = result.totalLosses;
+    }
+</script>
