@@ -1,0 +1,37 @@
+name: Build and Publish Docker Image
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Build and publish
+      run: |
+        dotnet restore RealmOfLegends.Web/RealmOfLegends.Web.csproj
+        dotnet publish RealmOfLegends.Web/RealmOfLegends.Web.csproj -c Release -o out /p:UseAppHost=false
+
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ github.repository }}:latest .
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Push image to Docker Hub
+      run: |
+        docker tag ${{ github.repository }}:latest ${{ secrets.DOCKERHUB_USERNAME }}/realmoflegends:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/realmoflegends:latest
