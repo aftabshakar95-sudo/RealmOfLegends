@@ -95,30 +95,28 @@ try
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<GameDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
-    // In development, apply migrations automatically
-    if (app.Environment.IsDevelopment())
+    // Attempt to apply migrations on startup (safe no-op if already applied)
+    try
     {
         await context.Database.MigrateAsync();
         logger.LogInformation("Database migrations applied successfully.");
     }
-    else
+    catch (Exception migEx)
     {
-        // In production, check if database exists
-        var canConnect = await context.Database.CanConnectAsync();
-        if (canConnect)
-        {
-            logger.LogInformation("Database connection successful.");
-        }
-        else
-        {
-            logger.LogWarning("Cannot connect to database. Please ensure the database is configured correctly.");
-        }
+        // Log but continue; migration may fail if DB not ready yet
+        logger.LogWarning(migEx, "Database migration attempt failed on startup.");
     }
-    
+
     // Seed data if needed
-    await DatabaseSeeder.SeedAsync(context);
-    logger.LogInformation("Database seeding completed.");
+    try
+    {
+        await DatabaseSeeder.SeedAsync(context);
+        logger.LogInformation("Database seeding completed.");
+    }
+    catch (Exception seedEx)
+    {
+        logger.LogWarning(seedEx, "Database seeding failed on startup.");
+    }
 }
 catch (Exception ex)
 {
