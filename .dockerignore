@@ -1,0 +1,35 @@
+# Ignore build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Ignore git files
+.git/
+.gitignore
+.gitattributes
+
+# Ignore VS files
+.vs/
+.vscode/
+
+# Ignore documentation
+Documentation/
+
+# Ignore scripts
+*.ps1
+*.bat
+
+# Ignore database setup
+database-setup.sql
+
+# Keep necessary files
+!RealmOfLegends.Core/**/*.cs
+!RealmOfLegends.Core/**/*.csproj
+!RealmOfLegends.Data/**/*.cs
+!RealmOfLegends.Data/**/*.csproj
+!RealmOfLegends.Web/**/*.cs
+!RealmOfLegends.Web/**/*.csproj
+!RealmOfLegends.Web/**/*.cshtml
+!RealmOfLegends.Web/**/*.json
+!RealmOfLegends.Web/wwwroot/**
+!RealmOfLegends.slnx
