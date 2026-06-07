@@ -26,9 +26,9 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Set environment variables
-ENV ASPNETCORE_URLS=http://+:3000
+ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-EXPOSE 3000
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "RealmOfLegends.Web.dll"]

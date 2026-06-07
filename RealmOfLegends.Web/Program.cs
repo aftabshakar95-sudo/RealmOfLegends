@@ -7,9 +7,9 @@ using RealmOfLegends.Web.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext with SQL Server
+// Add DbContext with PostgreSQL
 builder.Services.AddDbContext<GameDbContext>(options =>
-    options.UseSqlServer(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("RealmOfLegends.Data")));
 
