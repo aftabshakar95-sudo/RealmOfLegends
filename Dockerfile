@@ -27,8 +27,11 @@ COPY --from=build /app/out .
 
 # Install small DB client utilities (pg_isready) so the entrypoint can check Postgres readiness
 RUN apt-get update \
-    && apt-get install -y postgresql-client \
+    && apt-get install -y postgresql-client dos2unix \
     && rm -rf /var/lib/apt/lists/*
+
+# Ensure entrypoint has Unix line endings
+RUN if [ -f /app/entrypoint.sh ]; then dos2unix /app/entrypoint.sh || true; fi
 
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
