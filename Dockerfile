@@ -31,4 +31,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "RealmOfLegends.Web.dll"]
+# Copy entrypoint that waits for DB readiness before starting the app
+COPY ./entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
