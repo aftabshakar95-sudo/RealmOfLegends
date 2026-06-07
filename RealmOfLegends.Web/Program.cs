@@ -7,9 +7,9 @@ using RealmOfLegends.Web.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext with PostgreSQL
+// Add DbContext with SQL Server (use LocalDB in development)
 builder.Services.AddDbContext<GameDbContext>(options =>
-    options.UseNpgsql(
+    options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("RealmOfLegends.Data")));
 
@@ -49,6 +49,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // Add services to the container.
+builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<GlobalExceptionFilter>();
@@ -84,6 +85,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map Razor Pages so the app can serve pages in the browser
+app.MapRazorPages();
 
 // Database initialization
 try

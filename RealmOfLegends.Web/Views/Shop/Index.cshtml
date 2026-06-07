@@ -31,7 +31,7 @@
                 <select id="categoryFilter" onchange="applyFilters()">
                     <option value="all">All Items</option>
                     <option value="Weapon">⚔️ Weapons</option>
-                    <option value="Armor">🛡️ Armor</option>
+                    <option value="Armour">🛡️ Armor</option>
                     <option value="Consumable">🧪 Consumables</option>
                     <option value="Accessory">💎 Accessories</option>
                     <option value="Material">📦 Materials</option>
@@ -134,65 +134,104 @@
 
 @section Scripts {
     <script>
+        // Read antiforgery token once
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
         // Set selected values on page load
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('categoryFilter').value = '@currentCategory';
             document.getElementById('rarityFilter').value = '@currentRarity';
             document.getElementById('sortFilter').value = '@currentSort';
         });
-        
+
         function applyFilters() {
             const category = document.getElementById('categoryFilter').value;
             const rarity = document.getElementById('rarityFilter').value;
             const sort = document.getElementById('sortFilter').value;
-            
+
             let url = '@Url.Action("Index", "Shop")?';
-            if (category !== 'all') url += `category=${category}&`;
-            if (rarity !== 'all') url += `rarity=${rarity}&`;
-            if (sort !== 'default') url += `sort=${sort}&`;
-            
+            if (category !== 'all') url += `category=${encodeURIComponent(category)}&`;
+            if (rarity !== 'all') url += `rarity=${encodeURIComponent(rarity)}&`;
+            if (sort !== 'default') url += `sort=${encodeURIComponent(sort)}&`;
+
             window.location.href = url;
         }
-        
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `shop-toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('visible'), 10);
+            setTimeout(() => toast.classList.remove('visible'), 3500);
+            setTimeout(() => toast.remove(), 4200);
+        }
+
         async function purchaseItem(itemId, itemName, itemPrice) {
             if (!confirm(`Purchase ${itemName} for ${itemPrice} gold?`)) return;
-            
+
+            const itemCard = document.querySelector(`.shop-item[data-item-id='${itemId}']`);
+            const buyButton = itemCard?.querySelector('.btn-buy');
+            if (!buyButton) return showToast('Buy button not found', 'error');
+
+            // Disable button and show temporary spinner
+            buyButton.disabled = true;
+            const originalText = buyButton.innerHTML;
+            buyButton.innerHTML = '<span class="spinner">⏳</span> Purchasing...';
+
             try {
                 const response = await fetch('@Url.Action("Purchase", "Shop")', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        'RequestVerificationToken': antiForgeryToken
                     },
-                    body: JSON.stringify({ itemId })
+                    body: JSON.stringify({ ItemId: itemId })
                 });
-                
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || 'Network response was not ok');
+                }
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Update player gold display
-                    document.getElementById('playerGold').textContent = data.player.gold;
-                    
-                    // Show success animation
-                    showPurchaseAnimation(itemName, data.item.rarity);
-                    
-                    // Refresh page after animation
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    const goldEl = document.getElementById('playerGold');
+                    if (goldEl && data.player?.gold !== undefined) {
+                        goldEl.textContent = data.player.gold;
+                    }
+
+                    // Mark item as owned in UI
+                    itemCard.classList.add('owned');
+                    buyButton.innerHTML = 'Owned';
+                    buyButton.classList.remove('btn-buy');
+                    buyButton.classList.add('btn-owned');
+                    buyButton.disabled = true;
+
+                    // Show success toast and small animation
+                    showToast(`Purchased ${itemName}`, 'success');
+                    showPurchaseAnimation(itemName, data.item?.rarity || 'common');
                 } else {
+                    // Re-enable button and restore text
+                    buyButton.disabled = false;
+                    buyButton.innerHTML = originalText;
+
                     if (data.deficit) {
-                        alert(`Insufficient gold! You need ${data.deficit} more gold.`);
+                        showToast(`Insufficient gold! Need ${data.deficit} more.`, 'warning');
                     } else {
-                        alert(data.message || 'Purchase failed');
+                        showToast(data.message || 'Purchase failed', 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error purchasing item:', error);
-                alert('Failed to purchase item');
+                buyButton.disabled = false;
+                buyButton.innerHTML = originalText;
+                showToast('Failed to purchase item', 'error');
             }
         }
-        
+
         function showPurchaseAnimation(itemName, rarity) {
             const overlay = document.createElement('div');
             overlay.className = 'purchase-overlay';
@@ -210,12 +249,10 @@
                 </div>
             `;
             document.body.appendChild(overlay);
-            
+
             setTimeout(() => {
                 overlay.remove();
             }, 2500);
         }
     </script>
-    
-    @Html.AntiForgeryToken()
 }

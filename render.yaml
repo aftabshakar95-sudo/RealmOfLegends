@@ -1,0 +1,25 @@
+services:
+  # PostgreSQL Database (Free)
+  - type: pserv
+    name: realmoflegends-db
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:8080
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: realmoflegends-postgres
+          property: connectionString
+
+databases:
+  # Free PostgreSQL Database
+  - name: realmoflegends-postgres
+    databaseName: realmoflegends
+    user: realmoflegends
+    plan: free
+    region: oregon

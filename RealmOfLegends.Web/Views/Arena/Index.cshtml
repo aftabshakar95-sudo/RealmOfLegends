@@ -531,6 +531,8 @@
     }
 </style>
 
+<link rel="stylesheet" href="~/css/arena-enhancements.css" asp-append-version="true" />
+
 <div class="arena-container">
     <div class="arena-header">
         <h1>⚔️ Battle Arena ⚔️</h1>
@@ -636,6 +638,16 @@
                     <div class="level-badge @badgeClass">@i</div>
                 }
             </div>
+
+            <div style="margin-top:20px; text-align:center;">
+                <label style="display:inline-flex; align-items:center; gap:8px; color:#ddd;">
+                    <input type="checkbox" id="toggleParticles" /> Enable Particles
+                </label>
+                &nbsp;&nbsp;
+                <label style="display:inline-flex; align-items:center; gap:8px; color:#ddd;">
+                    <input type="checkbox" id="toggleSfx" /> Enable SFX
+                </label>
+            </div>
         </div>
     </div>
 
@@ -685,6 +697,13 @@
 </div>
 
 <script>
+    // Initialize arena effects when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.ArenaEffects && typeof window.ArenaEffects.init === 'function') {
+            window.ArenaEffects.init();
+        }
+    });
+
     let currentArenaLevel = @player.ArenaProgress.CurrentLevel;
     let battleInProgress = false;
     let playerHP = @player.HP;
@@ -703,8 +722,8 @@
         6: { name: 'Vampire Lord', icon: '🧛', hp: 200, attack: 45 },
         7: { name: 'Fire Elemental', icon: '🔥', hp: 220, attack: 52 },
         8: { name: 'Shadow Assassin', icon: '🥷', hp: 180, attack: 60 },
-        9: { name: 'Frost Giant', icon: '❄️', hp: 350, attack: 55 },
-        10: { name: 'Ancient Dragon', icon: '🐉', hp: 500, attack: 70 }
+        9: { name: 'Frost Giant', icon: '❄️', hp: 350, attack: 55, spriteSrc: '/images/enemies/frost-giant.png' },
+        10: { name: 'Ancient Dragon', icon: '🐉', hp: 500, attack: 70, spriteSrc: '/images/enemies/ancient-dragon.png', isBoss: true }
     };
 
     function updateEnemyDisplay() {
@@ -714,10 +733,79 @@
         enemyAttack = enemy.attack + (currentArenaLevel * 5);
         
         document.getElementById('enemySprite').textContent = enemy.icon;
+        const enemyFighter = document.getElementById('enemyFighter');
         document.getElementById('enemyNameDisplay').textContent = enemy.name;
+        // Attach particle theme to DOM for effects
+        if (enemyFighter) {
+            enemyFighter.dataset.particleTheme = enemy.particleTheme || enemy.theme || 'default';
+            try { if (window.ArenaEffects && typeof window.ArenaEffects.setTheme === 'function') window.ArenaEffects.setTheme(enemyFighter.dataset.particleTheme); } catch { }
+        }
         document.getElementById('enemyHealthText').textContent = `${enemyHP} / ${enemyMaxHP}`;
         document.getElementById('enemyHealthBar').style.width = '100%';
+
+        // Set particle theme if available
+        if (window.ArenaEffects && typeof window.ArenaEffects.setTheme === 'function') {
+            // Map some enemies to themes
+            const themeMap = {
+                'Goblin Scout': 'nature',
+                'Wild Wolf': 'nature',
+                'Orc Warrior': 'earth',
+                'Dark Mage': 'arcane',
+                'Stone Golem': 'earth',
+                'Vampire Lord': 'shadow',
+                'Fire Elemental': 'fire',
+                'Shadow Assassin': 'shadow',
+                'Frost Giant': 'ice',
+                'Ancient Dragon': 'fire'
+            };
+            const theme = themeMap[enemy.name] || 'default';
+            window.ArenaEffects.setTheme(theme);
+        }
+
+        // Sprite registration: if spriteSrc present, try to register animated sprite
+        try {
+            const spriteEl = document.getElementById('enemySprite');
+            if (enemy.spriteSrc && window.ArenaEffects && typeof window.ArenaEffects.registerSprite === 'function') {
+                // Choose frames and scale heuristics
+                const opts = {
+                    src: enemy.spriteSrc,
+                    frameWidth: 128,
+                    frameHeight: 128,
+                    frames: enemy.isBoss ? 12 : 8,
+                    fps: 12,
+                    scale: enemy.isBoss ? 1.8 : 1.2
+                };
+                window.ArenaEffects.registerSprite(spriteEl, opts);
+            } else {
+                // fallback to emoji
+                spriteEl.textContent = enemy.icon;
+            }
+        } catch (e) {
+            console.warn('Sprite registration failed', e);
+        }
     }
+
+    // Persist toggles and wire to ArenaEffects
+    document.addEventListener('DOMContentLoaded', function() {
+        const pToggle = document.getElementById('toggleParticles');
+        const sToggle = document.getElementById('toggleSfx');
+        try {
+            pToggle.checked = localStorage.getItem('arena.particles') !== '0';
+            sToggle.checked = localStorage.getItem('arena.sfx') !== '0';
+        } catch {}
+
+        function apply() {
+            const opts = { particles: !!pToggle.checked, sfx: !!sToggle.checked };
+            if (window.ArenaEffects && typeof window.ArenaEffects.setEnabled === 'function') {
+                window.ArenaEffects.setEnabled(opts);
+            }
+            try { localStorage.setItem('arena.particles', opts.particles ? '1' : '0'); localStorage.setItem('arena.sfx', opts.sfx ? '1' : '0'); } catch {}
+        }
+
+        pToggle.addEventListener('change', apply);
+        sToggle.addEventListener('change', apply);
+        apply();
+    });
 
     updateEnemyDisplay();
 
@@ -772,17 +860,32 @@
         
         // Hit animation
         defenderEl.classList.add('hit');
-        
-        // Show damage
+
+        // Effects: particles, shake, slow-motion on crit - use ArenaEffects helper
         const rect = defenderEl.getBoundingClientRect();
         const stageRect = document.getElementById('battleStage').getBoundingClientRect();
+        try {
+            if (window.ArenaEffects && typeof window.ArenaEffects.hitEffectAt === 'function') {
+                // read enemy particle theme from dataset if set
+                const theme = document.getElementById('enemyFighter')?.dataset?.particleTheme || null;
+                window.ArenaEffects.hitEffectAt(rect, isCrit, theme);
+            } else if (window.ArenaEffects && typeof window.ArenaEffects.spawnParticles === 'function') {
+                const docX = rect.left + rect.width / 2;
+                const docY = rect.top + rect.height / 2;
+                window.ArenaEffects.spawnParticles(docX, docY, isCrit ? '#ffeb3b' : '#ffffff', isCrit ? 28 : 12, isCrit ? 1200 : 800);
+            }
+        } catch (e) {
+            console.warn('ArenaEffects error', e);
+        }
+
+        // Show damage indicator
         showDamage(damage, rect.left - stageRect.left + 50, rect.top - stageRect.top + 50, isCrit);
-        
+
         await sleep(500);
-        
+
         attackerEl.classList.remove('attacking');
         defenderEl.classList.remove('hit');
-        
+
         await sleep(200);
     }
 
@@ -856,9 +959,15 @@
         if (playerWon) {
             document.getElementById('enemyFighter').classList.add('defeated');
             addLog('🏆 Victory! Enemy defeated!', 'player-action');
+            if (window.ArenaEffects && typeof window.ArenaEffects.playSfx === 'function') {
+                window.ArenaEffects.playSfx('victory', 0.9);
+            }
         } else {
             document.getElementById('playerFighter').classList.add('defeated');
             addLog('💀 Defeat! You were defeated...', 'enemy-action');
+            if (window.ArenaEffects && typeof window.ArenaEffects.playSfx === 'function') {
+                window.ArenaEffects.playSfx('defeat', 0.9);
+            }
         }
         
         await sleep(1500);
@@ -949,3 +1058,5 @@
         document.getElementById('totalLosses').textContent = result.totalLosses;
     }
 </script>
+
+<script src="~/js/arena-enhancements.js" asp-append-version="true"></script>

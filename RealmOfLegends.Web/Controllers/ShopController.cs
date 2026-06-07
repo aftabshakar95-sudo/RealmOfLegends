@@ -19,6 +19,11 @@ namespace RealmOfLegends.Web.Controllers
             _context = context;
         }
 
+        public record PurchaseRequest
+        {
+            public int ItemId { get; init; }
+        }
+
         public async Task<IActionResult> Index(string? category = null, string? rarity = null, string? sort = null)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -64,7 +69,7 @@ namespace RealmOfLegends.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Purchase(int itemId)
+        public async Task<IActionResult> Purchase([FromBody] PurchaseRequest request)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Json(new { success = false, message = "User not found" });
@@ -72,6 +77,7 @@ namespace RealmOfLegends.Web.Controllers
             var player = await _context.Players.FirstOrDefaultAsync(p => p.UserId == user.Id);
             if (player == null) return Json(new { success = false, message = "Player not found" });
 
+            var itemId = request?.ItemId ?? 0;
             var item = await _context.Items.FindAsync(itemId);
             if (item == null) return Json(new { success = false, message = "Item not found" });
 

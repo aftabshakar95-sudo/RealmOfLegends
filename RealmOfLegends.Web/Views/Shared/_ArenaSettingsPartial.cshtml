@@ -1,0 +1,48 @@
+@* Arena Settings Partial *@
+<link rel="stylesheet" href="~/css/arena-settings.css" asp-append-version="true" />
+
+<div id="arenaSettingsPanel" class="arena-settings-panel" role="dialog" aria-label="Arena settings" aria-hidden="true" style="display:none;">
+    <div class="panel-row">
+        <label><input type="checkbox" id="panelParticles" /> Enable Particles (Shift+P)</label>
+    </div>
+    <div class="panel-row">
+        <label><input type="checkbox" id="panelSfx" /> Enable SFX (Shift+S)</label>
+    </div>
+    <div class="panel-row note">Tip: Use Shift+P / Shift+S to toggle quickly.</div>
+</div>
+
+<script>
+    (function(){
+        const panel = document.getElementById('arenaSettingsPanel');
+        const pChk = document.getElementById('panelParticles');
+        const sChk = document.getElementById('panelSfx');
+
+        try{ pChk.checked = localStorage.getItem('arena.particles') !== '0'; } catch{}
+        try{ sChk.checked = localStorage.getItem('arena.sfx') !== '0'; } catch{}
+
+        function apply(){
+            const opts = { particles: !!pChk.checked, sfx: !!sChk.checked };
+            if(window.ArenaEffects && typeof window.ArenaEffects.setEnabled === 'function') window.ArenaEffects.setEnabled(opts);
+            try{ localStorage.setItem('arena.particles', opts.particles ? '1' : '0'); localStorage.setItem('arena.sfx', opts.sfx ? '1' : '0'); }catch{}
+        }
+
+        pChk.addEventListener('change', apply);
+        sChk.addEventListener('change', apply);
+        apply();
+
+        // Toggle panel visibility when the topbar button is clicked
+        const btn = document.getElementById('arenaSettingsToggle');
+        if(btn) btn.addEventListener('click', ()=>{
+            const shown = panel.style.display !== 'none';
+            panel.style.display = shown ? 'none' : 'block';
+            panel.setAttribute('aria-hidden', shown ? 'true' : 'false');
+        });
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', function(e){
+            if(!e.shiftKey) return;
+            if(e.key.toLowerCase() === 'p'){ pChk.checked = !pChk.checked; pChk.dispatchEvent(new Event('change')); }
+            if(e.key.toLowerCase() === 's'){ sChk.checked = !sChk.checked; sChk.dispatchEvent(new Event('change')); }
+        });
+    })();
+</script>

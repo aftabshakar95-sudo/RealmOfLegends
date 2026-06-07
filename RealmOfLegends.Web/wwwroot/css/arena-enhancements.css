@@ -1,0 +1,53 @@
+/* Arena enhancement styles: shake and slow motion */
+#arenaEffectsCanvas { pointer-events: none; }
+
+.shake { animation: shakeAnim 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shakeAnim {
+  10%, 90% { transform: translate3d(var(--shake-intensity,6px), 0, 0); }
+  20%, 80% { transform: translate3d(calc(var(--shake-intensity,6px) * -0.6), 0, 0); }
+  30%, 50%, 70% { transform: translate3d(calc(var(--shake-intensity,6px) * 0.3), 0, 0); }
+}
+
+/* Boss glow */
+.fighter.enemy.boss .fighter-sprite {
+    filter: drop-shadow(0 15px 30px rgba(255, 140, 0, 0.6)) saturate(1.2) contrast(1.1);
+    transform-origin: center;
+    animation: bossPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes bossPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); filter: drop-shadow(0 25px 40px rgba(255, 140, 0, 0.8)); }
+    100% { transform: scale(1); }
+}
+
+/* Visualizer ring for hits (placed by script) */
+.visualizer-ring {
+    pointer-events: none;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.12);
+    box-shadow: 0 10px 30px rgba(255,255,255,0.03);
+}
+
+.slow-motion { transition: transform 0.4s ease, filter 0.4s ease; transform: scale(0.997); filter: contrast(1.1) brightness(0.95); }
+
+/* Particle colors */
+.particle-crit { background: radial-gradient(circle,#ffeb3b,#ff0000); }
+.particle-basic { background: radial-gradient(circle,#ffffff,#ff9999); }
+
+/* Visualizer ring when audio plays */
+.audio-pulse {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: audioPulseAnim 0.9s ease-out forwards;
+    z-index: 9999;
+}
+
+@keyframes audioPulseAnim {
+    0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.6); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(4); }
+}

@@ -1,0 +1,4 @@
+/* Arena settings panel styles */
+.arena-settings-panel { background: linear-gradient(135deg,#151515 0%, #212121 100%); padding: 12px; border-radius: 8px; color:#ddd; box-shadow:0 10px 30px rgba(0,0,0,0.6); }
+.arena-settings-panel .panel-row{ margin-bottom:8px; }
+.arena-settings-panel .note{ font-size:0.85rem; color:#999; }

@@ -94,6 +94,9 @@
                     <span class="player-name">@ViewBag.CharacterName</span>
                     <span class="player-class">@ViewBag.PlayerClass</span>
                 </div>
+                <div class="topbar-controls" style="display: flex;">
+                    <button id="arenaSettingsToggle" title="Arena Settings" class="icon-btn" aria-label="Arena Settings">⚙️</button>
+                </div>
             </div>
         </div>
         
@@ -101,6 +104,8 @@
         <main class="main-content">
             @RenderBody()
         </main>
+        @* Render arena settings partial so the panel markup is server-rendered *@
+        @await Html.PartialAsync("_ArenaSettingsPartial")
     }
     else
     {
@@ -112,6 +117,7 @@
     
     <!-- Scripts -->
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/arena-settings.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
