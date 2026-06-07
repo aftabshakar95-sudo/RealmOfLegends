@@ -25,6 +25,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/out .
 
+# Install small DB client utilities (pg_isready) so the entrypoint can check Postgres readiness
+RUN apt-get update \
+    && apt-get install -y postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
