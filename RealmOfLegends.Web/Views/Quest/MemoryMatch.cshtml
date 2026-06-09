@@ -14,6 +14,7 @@
             padding: 2rem;
             background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
             position: relative;
+            overflow-y: auto;
         }
 
         .game-panel {
@@ -323,6 +324,7 @@
                 
                 const response = await fetch('@Url.Action("SubmitMemoryMatch", "Quest")', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': token
@@ -336,10 +338,11 @@
                 if (data.success) {
                     resultDiv.className = 'result-message success';
                     resultDiv.textContent = `Congratulations! You completed it in ${moves} moves! Earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
-                    
+
+                    const qs = new URLSearchParams({ gold: data.rewards.gold, xp: data.rewards.xp, msg: 'Memory Match completed' });
                     setTimeout(() => {
-                        window.location.href = '@Url.Action("Index", "Quest")';
-                    }, 3000);
+                        window.location.href = '@Url.Action("Index", "Quest")' + '?' + qs.toString();
+                    }, 1400);
                 }
             } catch (error) {
                 console.error('Error submitting score:', error);

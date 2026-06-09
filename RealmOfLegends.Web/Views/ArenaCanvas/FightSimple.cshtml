@@ -417,11 +417,92 @@ window.addEventListener('resize', resize);
 
 // ── REALISTIC VISUAL SYSTEMS ── //
 
-const colors = {
-    ambient: ['#040B16', '#100B16', '#1A0B0B', '#0A1510'],
-    light: ['#29B6F6', '#AB47BC', '#EF5350', '#66BB6A']
+// Per-level enemy theme palettes to give each arena enemy a distinct look
+const enemyThemes = {
+    1: { // Goblin Scout - green / nature
+        ambient: ['#07130A','#0b1f0d','#0f2611','#07140a'],
+        light: ['#7CFC00','#4CAF50','#2E7D32','#81C784'],
+        primaryDark: ['#113018','#0d2a14'],
+        primaryLight: ['#2e7d32','#66bb6a'],
+        veinColor: '#4CAF50',
+        eyeColor: '#AEEA00'
+    },
+    2: { // Skeleton Warrior - dark / arcane
+        ambient: ['#0b0b0f','#0a0710','#0f0912','#05040a'],
+        light: ['#8E44AD','#6A1B9A','#4A148C','#9C27B0'],
+        primaryDark: ['#1f1a23','#0f0c12'],
+        primaryLight: ['#7b6a8a','#a485c9'],
+        veinColor: '#AB47BC',
+        eyeColor: '#E1BEE7'
+    },
+    3: { // Forest Wolf - purple / nature
+        ambient: ['#12041a','#190622','#13041a','#0e0315'],
+        light: ['#9C27B0','#7B1FA2','#6A1B9A','#CE93D8'],
+        primaryDark: ['#2b1530','#1b0b1f'],
+        primaryLight: ['#7e57c2','#b388ff'],
+        veinColor: '#AB47BC',
+        eyeColor: '#D1C4E9'
+    },
+    4: { // Dark Elf Archer - teal / arcane
+        ambient: ['#021b1b','#052727','#061010','#022022'],
+        light: ['#00BCD4','#00ACC1','#00838F','#26C6DA'],
+        primaryDark: ['#062323','#0a2f2f'],
+        primaryLight: ['#00897b','#26a69a'],
+        veinColor: '#00BCD4',
+        eyeColor: '#B2EBF2'
+    },
+    5: { // Golem of Ruin - fire boss
+        ambient: ['#1a0b0b','#200a07','#240a07','#120606'],
+        light: ['#FF5722','#FF7043','#FF8A65','#FFAB91'],
+        primaryDark: ['#3a1a10','#2a0f08'],
+        primaryLight: ['#ff7043','#ff8a65'],
+        veinColor: '#FF3D00',
+        eyeColor: '#FF8A65'
+    },
+    6: { // Ice Banshee - blue / ice
+        ambient: ['#021025','#02203a','#021428','#001421'],
+        light: ['#29B6F6','#03A9F4','#0288D1','#81D4FA'],
+        primaryDark: ['#02283a','#012033'],
+        primaryLight: ['#03a9f4','#4fc3f7'],
+        veinColor: '#29B6F6',
+        eyeColor: '#B3E5FC'
+    },
+    7: { // Stone Golem Junior - brown / earth
+        ambient: ['#0c0502','#130903','#0f0703','#090402'],
+        light: ['#8D6E63','#6D4C41','#5D4037','#A1887F'],
+        primaryDark: ['#2b1f16','#1b1109'],
+        primaryLight: ['#795548','#a1887f'],
+        veinColor: '#6D4C41',
+        eyeColor: '#D7CCC8'
+    },
+    8: { // Shadow Assassin - dark purple / shadow
+        ambient: ['#05010a','#070313','#04020a','#03010a'],
+        light: ['#6A1B9A','#4A148C','#512DA8','#7E57C2'],
+        primaryDark: ['#0f0814','#09040d'],
+        primaryLight: ['#5e35b1','#9575cd'],
+        veinColor: '#6A1B9A',
+        eyeColor: '#CE93D8'
+    },
+    9: { // Fire Drake - red / fire
+        ambient: ['#150506','#200607','#130305','#0f0302'],
+        light: ['#FF1744','#FF5252','#FF7043','#FF8A65'],
+        primaryDark: ['#2a0a0a','#190606'],
+        primaryLight: ['#ff5252','#ff7043'],
+        veinColor: '#FF1744',
+        eyeColor: '#FFCDD2'
+    },
+    10: { // Lich King - black / shadow boss
+        ambient: ['#000000','#050006','#020103','#000000'],
+        light: ['#000000','#212121','#424242','#616161'],
+        primaryDark: ['#000000','#070707'],
+        primaryLight: ['#3e3e3e','#616161'],
+        veinColor: '#9E9E9E',
+        eyeColor: '#9FA8DA'
+    }
 };
-const themeIdx = (LEVEL_ID % 4);
+
+const enemyTheme = enemyThemes[LEVEL_ID] || enemyThemes[1];
+const colors = { ambient: enemyTheme.ambient, light: enemyTheme.light };
 
 function initFog() {
     fogLayers = [];
@@ -611,72 +692,42 @@ function drawBeast(x, y, anim) {
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
     ctx.beginPath(); ctx.ellipse(0, s*1.05, s*0.7, s*0.1, 0, 0, Math.PI*2); ctx.fill();
 
-    let lean = 0.2, armAngle = 0, headAngle = 0;
-    if(anim.state === 'attack') { lean = 0.6; armAngle = 1.5; headAngle = 0.5; }
-    if(anim.state === 'heavy') { lean = 0.8; armAngle = 2.5; headAngle = -0.5; }
-    if(anim.state === 'hit') { lean = -0.2; headAngle = -0.4; }
-
-    ctx.rotate(lean);
-
-    // Fleshy monstrous gradients
-    const skinDark = ctx.createRadialGradient(0,0,0,0,0,s);
-    skinDark.addColorStop(0, '#3E2723'); skinDark.addColorStop(1, '#000');
-    
-    const skinLight = ctx.createLinearGradient(-s*0.3, -s*0.3, s*0.3, s*0.5);
-    skinLight.addColorStop(0, '#4E342E'); skinLight.addColorStop(1, '#1B0000');
-
-    // Tendrils / Tails
-    ctx.strokeStyle = '#D50000'; ctx.lineWidth = s*0.05; ctx.lineCap='round';
-    for(let i=0; i<3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(-s*0.2, s*0.2);
-        let tx = -s*1.2 + Math.cos(frame*0.1+i)*s*0.3;
-        let ty = s*0.8 + Math.sin(frame*0.08+i)*s*0.4;
-        ctx.quadraticCurveTo(-s*0.8, s*0.2, tx, ty);
-        ctx.stroke();
+    // Call the appropriate enemy drawing function based on level
+    switch(gameState.enemyLevel) {
+        case 1:
+            drawGoblinScout(s, anim);
+            break;
+        case 2:
+            drawSkeletonWarrior(s, anim);
+            break;
+        case 3:
+            drawForestWolf(s, anim);
+            break;
+        case 4:
+            drawDarkElfArcher(s, anim);
+            break;
+        case 5:
+            drawGolemOfRuin(s, anim);
+            break;
+        case 6:
+            drawIceBanshee(s, anim);
+            break;
+        case 7:
+            drawStoneGolemJunior(s, anim);
+            break;
+        case 8:
+            drawShadowAssassin(s, anim);
+            break;
+        case 9:
+            drawFireDrake(s, anim);
+            break;
+        case 10:
+            drawLichKing(s, anim);
+            break;
+        default:
+            drawGenericMonster(s, anim);
+            break;
     }
-
-    // Legs
-    ctx.fillStyle = skinDark;
-    ctx.beginPath(); ctx.ellipse(-s*0.1, s*0.6, s*0.15, s*0.4, -0.5, 0, Math.PI*2); ctx.fill(); // back
-    ctx.fillStyle = skinLight;
-    ctx.beginPath(); ctx.ellipse(s*0.2, s*0.6, s*0.18, s*0.4, 0.2, 0, Math.PI*2); ctx.fill(); // front
-
-    // Massive Torso
-    ctx.fillStyle = skinLight;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, s*0.4, s*0.5, 0.2, 0, Math.PI*2);
-    ctx.fill();
-
-    // Magma Veins
-    ctx.strokeStyle = '#FF3D00'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#FF3D00';
-    ctx.beginPath(); ctx.moveTo(-s*0.2, -s*0.2); ctx.quadraticCurveTo(0, 0, s*0.2, s*0.2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-s*0.1, s*0.1); ctx.quadraticCurveTo(s*0.1, s*0.3, s*0.1, s*0.4); ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Head
-    ctx.save(); ctx.translate(s*0.3, -s*0.3); ctx.rotate(headAngle);
-    ctx.fillStyle = skinDark;
-    ctx.beginPath(); ctx.moveTo(0, s*0.1); ctx.lineTo(s*0.4, -s*0.1); ctx.lineTo(s*0.3, -s*0.3); ctx.lineTo(-s*0.2, -s*0.2); ctx.fill(); // jaw/snout
-    // Glowing Eyes
-    ctx.fillStyle = '#FF1744'; ctx.shadowBlur=15; ctx.shadowColor='#FF1744';
-    ctx.beginPath(); ctx.ellipse(s*0.1, -s*0.2, s*0.08, s*0.03, 0.2, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
-    // Horns
-    ctx.fillStyle = '#FFF';
-    ctx.beginPath(); ctx.moveTo(-s*0.1, -s*0.2); ctx.quadraticCurveTo(-s*0.3, -s*0.6, -s*0.5, -s*0.7); ctx.lineTo(-s*0.2, -s*0.25); ctx.fill();
-    ctx.restore();
-
-    // Arm / Claws
-    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
-    ctx.fillStyle = skinLight;
-    ctx.beginPath(); ctx.ellipse(0, s*0.3, s*0.1, s*0.4, -0.2, 0, Math.PI*2); ctx.fill();
-    // Claws
-    ctx.fillStyle = '#FFF';
-    for(let i=0; i<3; i++) {
-        ctx.beginPath(); ctx.moveTo(-s*0.05 + i*s*0.05, s*0.6); ctx.lineTo(s*0.1 + i*s*0.1, s*1); ctx.lineTo(s*0.05 + i*s*0.05, s*0.6); ctx.fill();
-    }
-    ctx.restore();
 
     ctx.restore();
 }
@@ -982,3 +1033,258 @@ init();
 </script>
 </body>
 </html>
+
+// ── DIFFERENT ENEMY TYPES ── //
+
+// Level 1: Goblin Scout (Green, small, agile)
+function drawGoblinScout(s, anim) {
+    let lean = 0.1, armAngle = 0, headAngle = 0;
+    if(anim.state === 'attack') { lean = 0.3; armAngle = 1.2; headAngle = 0.3; }
+    if(anim.state === 'hit') { lean = -0.2; headAngle = -0.3; }
+
+    ctx.rotate(lean);
+    const skinColor = '#4CAF50'; // Green
+    const darkSkin = '#2E7D32';
+
+    // Small goblin body
+    ctx.fillStyle = skinColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.25, s*0.35, 0, 0, Math.PI*2); ctx.fill();
+
+    // Head (big ears)
+    ctx.save(); ctx.translate(s*0.2, -s*0.25); ctx.rotate(headAngle);
+    ctx.fillStyle = skinColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.2, s*0.15, 0, 0, Math.PI*2); ctx.fill();
+    // Big ears
+    ctx.fillStyle = darkSkin;
+    ctx.beginPath(); ctx.ellipse(-s*0.15, -s*0.05, s*0.08, s*0.12, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s*0.15, -s*0.05, s*0.08, s*0.12, 0.5, 0, Math.PI*2); ctx.fill();
+    // Red eyes
+    ctx.fillStyle = '#F44336';
+    ctx.beginPath(); ctx.ellipse(-s*0.05, 0, s*0.03, s*0.03, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s*0.05, 0, s*0.03, s*0.03, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Arms with crude weapon
+    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
+    ctx.fillStyle = skinColor;
+    ctx.beginPath(); ctx.ellipse(0, s*0.2, s*0.08, s*0.25, 0, 0, Math.PI*2); ctx.fill();
+    // Crude spear
+    ctx.strokeStyle = '#8D6E63'; ctx.lineWidth = s*0.02;
+    ctx.beginPath(); ctx.moveTo(0, s*0.4); ctx.lineTo(s*0.1, s*0.8); ctx.stroke();
+    ctx.restore();
+}
+
+// Level 2: Skeleton Warrior (Bone white, undead)
+function drawSkeletonWarrior(s, anim) {
+    let lean = 0.1, armAngle = 0;
+    if(anim.state === 'attack') { lean = 0.4; armAngle = 1.5; }
+    if(anim.state === 'hit') { lean = -0.3; }
+
+    ctx.rotate(lean);
+    const boneColor = '#EEEEEE';
+    const darkBone = '#9E9E9E';
+
+    // Ribcage
+    ctx.strokeStyle = boneColor; ctx.lineWidth = s*0.03;
+    for(let i=0; i<5; i++) {
+        ctx.beginPath();
+        ctx.arc(0, -s*0.2 + i*s*0.08, s*0.15, 0, Math.PI);
+        ctx.stroke();
+    }
+
+    // Spine
+    ctx.strokeStyle = darkBone; ctx.lineWidth = s*0.05;
+    ctx.beginPath(); ctx.moveTo(0, -s*0.3); ctx.lineTo(0, s*0.4); ctx.stroke();
+
+    // Skull head
+    ctx.save(); ctx.translate(s*0.2, -s*0.4);
+    ctx.fillStyle = boneColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.18, s*0.15, 0, 0, Math.PI*2); ctx.fill();
+    // Eye sockets (glowing blue)
+    ctx.fillStyle = '#2196F3'; ctx.shadowBlur = 10; ctx.shadowColor = '#2196F3';
+    ctx.beginPath(); ctx.ellipse(-s*0.06, -s*0.02, s*0.04, s*0.04, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s*0.06, -s*0.02, s*0.04, s*0.04, 0, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Bony arm with sword
+    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
+    ctx.strokeStyle = boneColor; ctx.lineWidth = s*0.04;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, s*0.3); ctx.stroke();
+    // Sword
+    ctx.fillStyle = '#607D8B';
+    ctx.fillRect(-s*0.02, s*0.3, s*0.04, s*0.25);
+    ctx.fillRect(-s*0.08, s*0.28, s*0.16, s*0.04); // crossguard
+    ctx.restore();
+}
+// Level 3: Forest Wolf (Brown/purple, beast-like)
+function drawForestWolf(s, anim) {
+    let lean = 0.2, tailWag = Math.sin(frame*0.15);
+    if(anim.state === 'attack') { lean = 0.6; }
+    if(anim.state === 'hit') { lean = -0.2; }
+
+    ctx.rotate(lean * 0.3);
+    const furColor = '#8D6E63';
+    const darkFur = '#5D4037';
+
+    // Body (wolf-like, horizontal)
+    ctx.fillStyle = furColor;
+    ctx.beginPath(); ctx.ellipse(0, s*0.1, s*0.4, s*0.2, 0, 0, Math.PI*2); ctx.fill();
+
+    // Legs
+    ctx.fillStyle = darkFur;
+    for(let i=0; i<4; i++) {
+        let legX = -s*0.2 + (i%2)*s*0.3;
+        let legY = s*0.25 + Math.floor(i/2)*s*0.1;
+        ctx.beginPath(); ctx.ellipse(legX, legY, s*0.06, s*0.2, 0, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Wolf head (elongated snout)
+    ctx.save(); ctx.translate(s*0.35, -s*0.1);
+    ctx.fillStyle = furColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.2, s*0.12, 0, 0, Math.PI*2); ctx.fill();
+    // Snout
+    ctx.fillStyle = darkFur;
+    ctx.beginPath(); ctx.ellipse(s*0.15, s*0.02, s*0.08, s*0.06, 0, 0, Math.PI*2); ctx.fill();
+    // Glowing purple eyes
+    ctx.fillStyle = '#9C27B0'; ctx.shadowBlur = 8; ctx.shadowColor = '#9C27B0';
+    ctx.beginPath(); ctx.ellipse(-s*0.05, -s*0.03, s*0.03, s*0.03, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s*0.03, -s*0.03, s*0.03, s*0.03, 0, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Ears
+    ctx.fillStyle = furColor;
+    ctx.beginPath(); ctx.moveTo(-s*0.12, -s*0.08); ctx.lineTo(-s*0.18, -s*0.15); ctx.lineTo(-s*0.08, -s*0.12); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(s*0.08, -s*0.08); ctx.lineTo(s*0.14, -s*0.15); ctx.lineTo(s*0.04, -s*0.12); ctx.fill();
+    ctx.restore();
+
+    // Tail
+    ctx.save(); ctx.translate(-s*0.35, s*0.1); ctx.rotate(tailWag * 0.5);
+    ctx.fillStyle = furColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.25, s*0.08, -0.3, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+}
+
+// Level 5: Golem of Ruin (BOSS - Large, fiery rock creature)
+function drawGolemOfRuin(s, anim) {
+    const bossScale = gameState.enemyIsBoss ? 1.5 : 1; // Bigger if boss
+    s *= bossScale;
+    
+    let lean = 0.1, armAngle = 0;
+    if(anim.state === 'attack') { lean = 0.5; armAngle = 2; }
+    if(anim.state === 'hit') { lean = -0.2; }
+
+    ctx.rotate(lean * 0.5);
+    const rockColor = '#8D6E63';
+    const lavaColor = '#FF5722';
+
+    // Massive rocky body
+    ctx.fillStyle = rockColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.5, s*0.6, 0, 0, Math.PI*2); ctx.fill();
+
+    // Lava cracks
+    ctx.strokeStyle = lavaColor; ctx.lineWidth = s*0.03; ctx.shadowBlur = 15; ctx.shadowColor = lavaColor;
+    ctx.beginPath(); ctx.moveTo(-s*0.3, -s*0.2); ctx.quadraticCurveTo(0, 0, s*0.3, s*0.2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-s*0.2, s*0.1); ctx.quadraticCurveTo(s*0.1, s*0.3, s*0.2, s*0.4); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Rocky head
+    ctx.save(); ctx.translate(s*0.2, -s*0.5);
+    ctx.fillStyle = rockColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.25, s*0.2, 0, 0, Math.PI*2); ctx.fill();
+    // Glowing lava eyes
+    ctx.fillStyle = lavaColor; ctx.shadowBlur = 20; ctx.shadowColor = lavaColor;
+    ctx.beginPath(); ctx.ellipse(-s*0.08, 0, s*0.06, s*0.06, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s*0.08, 0, s*0.06, s*0.06, 0, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Massive arm
+    ctx.save(); ctx.translate(s*0.3, -s*0.2); ctx.rotate(armAngle);
+    ctx.fillStyle = rockColor;
+    ctx.beginPath(); ctx.ellipse(0, s*0.3, s*0.15, s*0.4, 0, 0, Math.PI*2); ctx.fill();
+    // Boulder fist
+    ctx.beginPath(); ctx.ellipse(0, s*0.7, s*0.2, s*0.2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+}
+
+// Generic monster (fallback) - use original design
+function drawGenericMonster(s, anim) {
+    drawOriginalMonster(s, anim);
+}
+
+// Levels 4, 6-10: Simplified different colored variants for remaining
+function drawDarkElfArcher(s, anim) { drawColoredVariant(s, anim, '#37474F', '#00695C'); }
+function drawIceBanshee(s, anim) { drawColoredVariant(s, anim, '#E1F5FE', '#03A9F4'); }
+function drawStoneGolemJunior(s, anim) { drawColoredVariant(s, anim, '#6D4C41', '#FF9800'); }
+function drawShadowAssassin(s, anim) { drawColoredVariant(s, anim, '#1A1A1A', '#7B1FA2'); }
+function drawFireDrake(s, anim) { drawColoredVariant(s, anim, '#D84315', '#FF5722'); }
+function drawLichKing(s, anim) { 
+    const bossScale = gameState.enemyIsBoss ? 1.8 : 1;
+    drawColoredVariant(s * bossScale, anim, '#FAFAFA', '#4A148C'); 
+}
+
+function drawColoredVariant(s, anim, primaryColor, accentColor) {
+    let lean = 0.2, armAngle = 0, headAngle = 0;
+    if(anim.state === 'attack') { lean = 0.6; armAngle = 1.5; headAngle = 0.5; }
+    if(anim.state === 'hit') { lean = -0.2; headAngle = -0.4; }
+
+    ctx.rotate(lean);
+
+    // Body with custom colors
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.35, s*0.45, 0.2, 0, Math.PI*2); ctx.fill();
+
+    // Head
+    ctx.save(); ctx.translate(s*0.3, -s*0.3); ctx.rotate(headAngle);
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath(); ctx.moveTo(0, s*0.1); ctx.lineTo(s*0.3, -s*0.1); ctx.lineTo(s*0.2, -s*0.25); ctx.lineTo(-s*0.1, -s*0.2); ctx.fill();
+    // Glowing Eyes with accent color
+    ctx.fillStyle = accentColor; ctx.shadowBlur=12; ctx.shadowColor=accentColor;
+    ctx.beginPath(); ctx.ellipse(s*0.08, -s*0.15, s*0.06, s*0.03, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Arm 
+    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath(); ctx.ellipse(0, s*0.3, s*0.08, s*0.3, -0.2, 0, Math.PI*2); ctx.fill();
+    // Weapon/claw with accent color
+    ctx.fillStyle = accentColor;
+    ctx.beginPath(); ctx.moveTo(-s*0.03, s*0.5); ctx.lineTo(s*0.08, s*0.8); ctx.lineTo(s*0.03, s*0.5); ctx.fill();
+    ctx.restore();
+}
+
+function drawOriginalMonster(s, anim) {
+    let lean = 0.2, armAngle = 0, headAngle = 0;
+    if(anim.state === 'attack') { lean = 0.6; armAngle = 1.5; headAngle = 0.5; }
+    if(anim.state === 'hit') { lean = -0.2; headAngle = -0.4; }
+
+    ctx.rotate(lean);
+
+    // Original monster design (as fallback)
+    const skinDark = ctx.createRadialGradient(0,0,0,0,0,s);
+    skinDark.addColorStop(0, '#3E2723'); skinDark.addColorStop(1, '#000');
+    
+    const skinLight = ctx.createLinearGradient(-s*0.3, -s*0.3, s*0.3, s*0.5);
+    skinLight.addColorStop(0, '#4E342E'); skinLight.addColorStop(1, '#1B0000');
+
+    // Massive Torso
+    ctx.fillStyle = skinLight;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.4, s*0.5, 0.2, 0, Math.PI*2); ctx.fill();
+
+    // Head
+    ctx.save(); ctx.translate(s*0.3, -s*0.3); ctx.rotate(headAngle);
+    ctx.fillStyle = skinDark;
+    ctx.beginPath(); ctx.moveTo(0, s*0.1); ctx.lineTo(s*0.4, -s*0.1); ctx.lineTo(s*0.3, -s*0.3); ctx.lineTo(-s*0.2, -s*0.2); ctx.fill();
+    // Glowing Eyes
+    ctx.fillStyle = '#FF1744'; ctx.shadowBlur=15; ctx.shadowColor='#FF1744';
+    ctx.beginPath(); ctx.ellipse(s*0.1, -s*0.2, s*0.08, s*0.03, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Arm / Claws
+    ctx.save(); ctx.translate(s*0.1, -s*0.1); ctx.rotate(armAngle);
+    ctx.fillStyle = skinLight;
+    ctx.beginPath(); ctx.ellipse(0, s*0.3, s*0.1, s*0.4, -0.2, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+}

@@ -1,0 +1,70 @@
+═══════════════════════════════════════════════════════════════════════
+              HOW TO SHARE REALM OF LEGENDS ONLINE
+═══════════════════════════════════════════════════════════════════════
+
+STEP 1: Start Your Application
+───────────────────────────────────────────────────────────────────────
+Open Command Prompt and run:
+
+    cd c:\Users\hp\Desktop\RealmOfLegends\RealmOfLegends.Web
+    dotnet run
+
+Wait for: "Now listening on: http://localhost:5138"
+KEEP THIS WINDOW OPEN!
+
+
+STEP 2: Start ngrok Tunnel
+───────────────────────────────────────────────────────────────────────
+Open a NEW Command Prompt and run:
+
+    C:\ngrok\ngrok.exe http 5138
+
+You'll see something like:
+    Forwarding    https://abc-xyz-123.ngrok-free.dev → localhost:5138
+
+THAT'S YOUR SHAREABLE LINK!
+Copy it and share with anyone.
+
+
+═══════════════════════════════════════════════════════════════════════
+                            QUICK VERSION
+═══════════════════════════════════════════════════════════════════════
+
+Terminal 1:  cd c:\Users\hp\Desktop\RealmOfLegends\RealmOfLegends.Web
+             dotnet run
+
+Terminal 2:  C:\ngrok\ngrok.exe http 5138
+
+Copy the https:// URL from Terminal 2 and share it!
+
+
+═══════════════════════════════════════════════════════════════════════
+                         IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════════════
+
+• Keep BOTH terminals open while sharing
+• Your computer must stay on
+• The URL changes every time you restart ngrok
+• Your authtoken is already saved (one-time setup done)
+• Free users see a warning page - they just click "Visit Site"
+
+
+═══════════════════════════════════════════════════════════════════════
+                          TO STOP SHARING
+═══════════════════════════════════════════════════════════════════════
+
+Press Ctrl+C in both terminal windows.
+
+
+═══════════════════════════════════════════════════════════════════════
+                       WHAT'S INSTALLED
+═══════════════════════════════════════════════════════════════════════
+
+✓ ngrok location: C:\ngrok\ngrok.exe
+✓ ngrok authtoken: Already configured
+✓ Application: Ready at c:\Users\hp\Desktop\RealmOfLegends
+
+
+═══════════════════════════════════════════════════════════════════════
+                      THAT'S IT! SUPER SIMPLE!
+═══════════════════════════════════════════════════════════════════════
