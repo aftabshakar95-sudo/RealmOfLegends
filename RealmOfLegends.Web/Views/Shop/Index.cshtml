@@ -133,8 +133,6 @@
 </div>
 
 @section Scripts {
-    @Html.AntiForgeryToken()
-    
     <script>
         // Read antiforgery token once
         const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -184,7 +182,6 @@
             try {
                 const response = await fetch('@Url.Action("Purchase", "Shop")', {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': antiForgeryToken

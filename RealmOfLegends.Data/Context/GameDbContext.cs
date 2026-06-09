@@ -22,7 +22,6 @@ namespace RealmOfLegends.Data.Context
         public DbSet<Achievement> Achievements { get; set; }
         public DbSet<PlayerAchievement> PlayerAchievements { get; set; }
         public DbSet<News> News { get; set; }
-        public DbSet<RiddleAttempt> RiddleAttempts { get; set; }
         
         // New Arena System
         public DbSet<Enemy> Enemies { get; set; }
@@ -172,17 +171,6 @@ namespace RealmOfLegends.Data.Context
                 entity.HasKey(e => e.NewsId);
                 entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.Body).HasColumnType("nvarchar(max)");
-            });
-
-            // RiddleAttempt Configuration
-            modelBuilder.Entity<RiddleAttempt>(entity =>
-            {
-                entity.HasKey(e => e.RiddleAttemptId);
-                entity.HasOne(e => e.Player)
-                    .WithMany()
-                    .HasForeignKey(e => e.PlayerId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.Property(e => e.LastAttemptAt).IsRequired();
             });
             
             // Enemy Configuration

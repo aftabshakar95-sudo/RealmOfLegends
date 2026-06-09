@@ -925,33 +925,6 @@ namespace RealmOfLegends.Data.Migrations
                     b.ToTable("Quests");
                 });
 
-            modelBuilder.Entity("RealmOfLegends.Core.Entities.RiddleAttempt", b =>
-                {
-                    b.Property<int>("RiddleAttemptId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RiddleAttemptId"));
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LastAttemptAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PlayerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RiddleId")
-                        .HasColumnType("int");
-
-                    b.HasKey("RiddleAttemptId");
-
-                    b.HasIndex("PlayerId");
-
-                    b.ToTable("RiddleAttempts");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1172,17 +1145,6 @@ namespace RealmOfLegends.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("RewardItem");
-                });
-
-            modelBuilder.Entity("RealmOfLegends.Core.Entities.RiddleAttempt", b =>
-                {
-                    b.HasOne("RealmOfLegends.Core.Entities.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("RealmOfLegends.Core.Entities.Achievement", b =>

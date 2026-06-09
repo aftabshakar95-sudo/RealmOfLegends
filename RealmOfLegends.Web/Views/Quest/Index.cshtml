@@ -132,39 +132,13 @@
 </div>
 
 @section Scripts {
-    @Html.AntiForgeryToken()
     <script>
-        // Show reward popup if redirected with rewards in query string
-        (function showRedirectRewards() {
-            try {
-                const params = new URLSearchParams(window.location.search);
-                const gold = params.get('gold');
-                const xp = params.get('xp');
-                const msg = params.get('msg');
-                if ((gold || xp) && (gold !== 'null' || xp !== 'null')) {
-                    const r = { gold: gold || 0, xp: xp || 0 };
-                    showRewardAnimation(r);
-
-                    // Update small player summary values if present
-                    const playerGoldEl = document.querySelector('.player-summary .summary-item');
-                    if (playerGoldEl && gold) {
-                        playerGoldEl.textContent = `💰 Gold: ${gold}`;
-                    }
-
-                    // remove query params to avoid duplicate popup on refresh
-                    const url = new URL(window.location);
-                    url.search = '';
-                    window.history.replaceState({}, document.title, url.toString());
-                }
-            } catch(e) { /* ignore */ }
-        })();
         async function startQuest(questId) {
             if(!confirm('Start this quest?')) return;
             
             try {
                 const response = await fetch('@Url.Action("StartQuest", "Quest")', {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
@@ -192,7 +166,6 @@
             try {
                 const response = await fetch('@Url.Action("CompleteQuest", "Quest")', {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''

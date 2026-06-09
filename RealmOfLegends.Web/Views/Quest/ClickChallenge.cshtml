@@ -14,7 +14,7 @@
             padding: 2rem;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .game-container::before {
@@ -278,7 +278,6 @@
                 
                 const response = await fetch('@Url.Action("SubmitClickChallenge", "Quest")', {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': token
@@ -295,12 +294,10 @@
                 if (data.success) {
                     resultDiv.className = 'result-message success';
                     resultDiv.textContent = `Success! You earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
-
-                    // Redirect back to Quest index with reward info in query string so it can display a popup
-                    const qs = new URLSearchParams({ gold: data.rewards.gold, xp: data.rewards.xp, msg: 'Click Challenge completed' });
+                    
                     setTimeout(() => {
-                        window.location.href = '@Url.Action("Index", "Quest")' + '?' + qs.toString();
-                    }, 1200);
+                        window.location.href = '@Url.Action("Index", "Quest")';
+                    }, 2000);
                 } else {
                     resultDiv.className = 'result-message error';
                     resultDiv.textContent = data.message || 'Failed to submit score';

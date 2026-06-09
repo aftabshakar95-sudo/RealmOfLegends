@@ -7,12 +7,6 @@ using RealmOfLegends.Web.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Kestrel to accept any host header (required for ngrok and other tunneling services)
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.AllowSynchronousIO = true;
-});
-
 // Add DbContext with SQL Server (use LocalDB / configured connection string)
 builder.Services.AddDbContext<GameDbContext>(options =>
     options.UseSqlServer(
@@ -45,11 +39,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
-    // Allow HTTP for ngrok tunneling (ngrok provides HTTPS, but some requests may come as HTTP internally)
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
-        ? CookieSecurePolicy.SameAsRequest 
-        : CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Lax; // Changed from Strict to Lax for better ngrok compatibility
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
     options.ExpireTimeSpan = TimeSpan.FromHours(2);
     options.SlidingExpiration = true;
     options.LoginPath = "/Account/Login";
@@ -68,13 +59,6 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddScoped<RealmOfLegends.Core.Services.Arena.IArenaService, RealmOfLegends.Data.Services.ArenaService>();
 
 var app = builder.Build();
-
-// Allow forwarded headers for ngrok and reverse proxies
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor 
-        | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-});
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
