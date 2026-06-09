@@ -230,10 +230,44 @@ namespace RealmOfLegends.Web.Controllers
                 return Json(new { success = false, message = "Invalid riddle" });
             }
 
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { success = false, message = "User not found" });
+
+            var player = await _context.Players.FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (player == null) return Json(new { success = false, message = "Player not found" });
+
+            // Server-side attempt tracking
+            var attempt = await _context.RiddleAttempts.FirstOrDefaultAsync(a => a.PlayerId == player.PlayerId && a.RiddleId == riddleId);
+            if (attempt == null)
+            {
+                attempt = new RiddleAttempt { PlayerId = player.PlayerId, RiddleId = riddleId, Attempts = 0, LastAttemptAt = DateTime.UtcNow };
+                _context.RiddleAttempts.Add(attempt);
+            }
+
+            // If already exceeded attempts
+            if (attempt.Attempts >= 3)
+            {
+                return Json(new { success = false, message = "You have used all attempts for this riddle.", attempts = attempt.Attempts, max = 3 });
+            }
+
             if (!string.Equals(answer?.Trim(), riddles[riddleId], StringComparison.OrdinalIgnoreCase))
             {
-                return Json(new { success = false, message = "Wrong answer! Try again." });
+                attempt.Attempts++;
+                attempt.LastAttemptAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                if (attempt.Attempts >= 3)
+                {
+                    return Json(new { success = false, message = "Wrong answer! Out of attempts.", attempts = attempt.Attempts, max = 3 });
+                }
+
+                return Json(new { success = false, message = "Wrong answer! Try again.", attempts = attempt.Attempts, max = 3 });
             }
+
+            // Correct answer - reset or remove attempts
+            attempt.Attempts = 0;
+            attempt.LastAttemptAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
 
             var quest = await _context.Quests.FirstOrDefaultAsync(q => q.Title == "Riddle Master");
             if (quest != null)

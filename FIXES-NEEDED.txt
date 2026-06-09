@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════════════
+                        FIXES IN PROGRESS
+═══════════════════════════════════════════════════════════════════════
+
+COMPLETED:
+✅ 1. Fixed Login page scrolling (overflow: hidden → overflow-y: auto)
+✅ 2. Deleted unnecessary files (kept ngrok files)
+
+REMAINING ISSUES TO FIX:
+───────────────────────────────────────────────────────────────────────
+
+1. SIGNUP PAGE SCROLLING
+   File: RealmOfLegends.Web\Views\Account\Register.cshtml
+   Issue: overflow: hidden prevents scrolling
+   Fix: Change to overflow-y: auto
+
+2. HOME PAGE SCROLLING  
+   File: RealmOfLegends.Web\Views\Home\Index.cshtml
+   Issue: overflow: hidden prevents scrolling
+   Fix: Change to overflow-y: auto
+
+3. QUEST COMPLETION - NO REWARDS SHOWN
+   Files: RealmOfLegends.Web\Views\Quest\*.cshtml
+   Issue: Success messages not displaying after quest completion
+   Fix: Add success notification display in quest game views
+
+4. SHOP PURCHASE NOT WORKING
+   File: RealmOfLegends.Web\Views\Shop\Index.cshtml
+   Issue: Purchase button not triggering correctly
+   Fix: Check AJAX call and CSRF token in purchase function
+
+5. RIDDLE SYSTEM IMPROVEMENTS
+   File: RealmOfLegends.Web\Views\Quest\Riddle.cshtml
+   Needed:
+   - Add 3-attempt limit
+   - Hide hint by default, show on request
+   - Show answer after 3 failed attempts
+   - Randomize riddles on each visit
+
+6. ARENA ENEMIES - VISUAL DISTINCTION
+   Current: All enemies use same rendering
+   Needed: Different visual representation for each level
+   Files: RealmOfLegends.Web\Views\ArenaCanvas\*.cshtml
+
+Would you like me to fix ALL of these now, or prioritize certain ones?

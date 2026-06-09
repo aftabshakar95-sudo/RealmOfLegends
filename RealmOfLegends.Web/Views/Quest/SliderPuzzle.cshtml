@@ -180,6 +180,7 @@
 
         <div class="game-buttons">
             <button class="btn btn-primary" id="shuffleBtn" onclick="startGame()">Start Game</button>
+            <button class="btn btn-primary" id="submitSolutionBtn" onclick="submitSolution()" disabled>Submit Solution</button>
             <a href="@Url.Action("Index", "Quest")" class="btn btn-secondary">Back to Quests</a>
         </div>
 
@@ -267,7 +268,13 @@
             renderPuzzle();
             
             if (checkWin()) {
-                endGame();
+                // enable submit button instead of auto-submitting
+                document.getElementById('submitSolutionBtn').disabled = false;
+                const resultDiv = document.getElementById('resultMessage');
+                resultDiv.className = 'result-message success';
+                resultDiv.textContent = `Completed! Click Submit to claim rewards.`;
+                clearInterval(timerInterval);
+                gameStarted = false;
             }
         }
 
@@ -303,8 +310,9 @@
             gameStarted = false;
             clearInterval(timerInterval);
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            
-            submitScore(moves, elapsed);
+
+            // enable submit button so player can claim reward
+            document.getElementById('submitSolutionBtn').disabled = false;
         }
 
         async function submitScore(moves, time) {
@@ -313,6 +321,7 @@
                 
                 const response = await fetch('@Url.Action("SubmitSliderPuzzle", "Quest")', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': token
@@ -326,14 +335,21 @@
                 if (data.success) {
                     resultDiv.className = 'result-message success';
                     resultDiv.textContent = `Solved in ${moves} moves! Earned ${data.rewards.gold} gold and ${data.rewards.xp} XP!`;
-                    
+
+                    const qs = new URLSearchParams({ gold: data.rewards.gold, xp: data.rewards.xp, msg: 'Slider Puzzle completed' });
                     setTimeout(() => {
-                        window.location.href = '@Url.Action("Index", "Quest")';
-                    }, 3000);
+                        window.location.href = '@Url.Action("Index", "Quest")' + '?' + qs.toString();
+                    }, 1400);
                 }
             } catch (error) {
                 console.error('Error submitting score:', error);
             }
+        }
+
+        function submitSolution() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000) || 0;
+            submitScore(moves, elapsed);
+            document.getElementById('submitSolutionBtn').disabled = true;
         }
 
         // Initialize with solved puzzle
