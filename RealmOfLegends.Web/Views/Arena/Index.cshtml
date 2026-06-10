@@ -548,26 +548,25 @@
                 <!-- Player Fighter -->
                 <div class="fighter player" id="playerFighter">
                     <div class="health-bar-container">
-                        <div class="fighter-name">@player.CharacterName</div>
+                        <div class="fighter-name">@(player?.CharacterName ?? "Unknown")</div>
                         <div class="health-bar">
                             <div class="health-fill player-health" id="playerHealthBar" style="width: 100%"></div>
-                            <div class="health-text" id="playerHealthText">@player.HP / @player.MaxHP</div>
+                            <div class="health-text" id="playerHealthText">@(player?.HP ?? 0) / @(player?.MaxHP ?? 0)</div>
                         </div>
                     </div>
                     <div class="fighter-sprite" id="playerSprite">
-                        @switch (player.Class)
-                        {
-                            case "Warrior": @:🗡️
-                                break;
-                            case "Mage": @:🧙
-                                break;
-                            case "Rogue": @:🥷
-                                break;
-                            case "Paladin": @:⚔️
-                                break;
-                            default: @:🗡️
-                                break;
+                        @{
+                            var playerClass = player?.Class ?? "Warrior";
+                            var sprite = playerClass switch
+                            {
+                                "Warrior" => "🗡️",
+                                "Mage" => "🧙",
+                                "Rogue" => "🥷",
+                                "Paladin" => "⚔️",
+                                _ => "🗡️"
+                            };
                         }
+                        @sprite
                     </div>
                 </div>
                 
@@ -600,30 +599,32 @@
             
             <div class="stat-item">
                 <span class="stat-label">Current Arena Level</span>
-                <span class="stat-value" id="currentLevel">@player.ArenaProgress.CurrentLevel</span>
+                <span class="stat-value" id="currentLevel">@(player?.ArenaProgress?.CurrentLevel ?? 1)</span>
             </div>
 
             <div class="stat-item">
                 <span class="stat-label">Highest Level Reached</span>
-                <span class="stat-value">@player.ArenaProgress.HighestLevel</span>
+                <span class="stat-value">@(player?.ArenaProgress?.HighestLevel ?? 1)</span>
             </div>
 
             <div class="stat-item">
                 <span class="stat-label">Total Wins</span>
-                <span class="stat-value" id="totalWins">@player.ArenaProgress.TotalWins</span>
+                <span class="stat-value" id="totalWins">@(player?.ArenaProgress?.TotalWins ?? 0)</span>
             </div>
 
             <div class="stat-item">
                 <span class="stat-label">Total Losses</span>
-                <span class="stat-value" id="totalLosses">@player.ArenaProgress.TotalLosses</span>
+                <span class="stat-value" id="totalLosses">@(player?.ArenaProgress?.TotalLosses ?? 0)</span>
             </div>
 
             <div class="stat-item">
                 <span class="stat-label">Win Rate</span>
                 <span class="stat-value">
                     @{
-                        var totalFights = player.ArenaProgress.TotalWins + player.ArenaProgress.TotalLosses;
-                        var winRate = totalFights > 0 ? (player.ArenaProgress.TotalWins * 100.0 / totalFights).ToString("F1") : "0.0";
+                        var totalWins = player?.ArenaProgress?.TotalWins ?? 0;
+                        var totalLosses = player?.ArenaProgress?.TotalLosses ?? 0;
+                        var totalFights = totalWins + totalLosses;
+                        var winRate = totalFights > 0 ? (totalWins * 100.0 / totalFights).ToString("F1") : "0.0";
                     }
                     @winRate%
                 </span>
@@ -633,8 +634,9 @@
             <div class="arena-levels" id="arenaLevels">
                 @for (int i = 1; i <= 10; i++)
                 {
-                    var badgeClass = i < player.ArenaProgress.CurrentLevel ? "completed" : 
-                                   i == player.ArenaProgress.CurrentLevel ? "current" : "locked";
+                    var currentLevel = player?.ArenaProgress?.CurrentLevel ?? 1;
+                    var badgeClass = i < currentLevel ? "completed" : 
+                                   i == currentLevel ? "current" : "locked";
                     <div class="level-badge @badgeClass">@i</div>
                 }
             </div>
@@ -704,13 +706,13 @@
         }
     });
 
-    let currentArenaLevel = @player.ArenaProgress.CurrentLevel;
+    let currentArenaLevel = @(player?.ArenaProgress?.CurrentLevel ?? 1);
     let battleInProgress = false;
-    let playerHP = @player.HP;
-    let playerMaxHP = @player.MaxHP;
+    let playerHP = @(player?.HP ?? 100);
+    let playerMaxHP = @(player?.MaxHP ?? 100);
     let enemyHP = 0;
     let enemyMaxHP = 0;
-    let playerAttack = @player.AttackPower;
+    let playerAttack = @(player?.AttackPower ?? 10);
     let enemyAttack = 0;
     
     const enemyData = {
